@@ -1418,7 +1418,49 @@ namespace SaiyanTransformations
 
         internal static void Notify(string text)
         {
-            Game1.addHUDMessage(new HUDMessage(text, 2));
+            if (!string.IsNullOrEmpty(text))
+                Game1.addHUDMessage(new HUDMessage(text, 2));
+        }
+
+        private readonly Dictionary<string, Texture2D> portraitCache =
+            new Dictionary<string, Texture2D>();
+
+        /// <summary>Load a boss's portrait from assets/portraits/&lt;id&gt;.png, cached, falling
+        /// back to a shared default. Replacing the PNG swaps the portrait with no code change.</summary>
+        internal Texture2D GetBossPortrait(string id)
+        {
+            id ??= "_default";
+            if (this.portraitCache.TryGetValue(id, out Texture2D cached))
+                return cached;
+
+            Texture2D tex = null;
+            try { tex = this.Helper.ModContent.Load<Texture2D>($"assets/portraits/{id}.png"); }
+            catch (Exception) { }
+            if (tex == null && id != "_default")
+                tex = this.GetBossPortrait("_default");
+
+            this.portraitCache[id] = tex;
+            return tex;
+        }
+
+        /// <summary>Show a boss line the way an NPC speaks: a dialogue box with a portrait and
+        /// the boss's name. Narration is handled separately as narrator toasts.</summary>
+        internal void ShowBossSpeech(string id, string displayName, string speech)
+        {
+            if (string.IsNullOrEmpty(speech))
+                return;
+            try
+            {
+                Texture2D portrait = this.GetBossPortrait(id);
+                NPC speaker = new NPC(null, new Vector2(-2000f, -2000f), "", 0,
+                                      displayName ?? "???", false, portrait);
+                speaker.displayName = displayName ?? "???";
+                Game1.DrawDialogue(new Dialogue(speaker, null, speech));
+            }
+            catch (Exception)
+            {
+                Game1.drawObjectDialogue(speech);   // portrait-less fallback
+            }
         }
 
         /// <summary>Play a sound cue without letting a missing cue take the mod down.</summary>

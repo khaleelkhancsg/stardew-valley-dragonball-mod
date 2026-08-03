@@ -546,24 +546,13 @@ SHEETS = {
     "android":   dict(size=(64, 160), frame=(16, 32), kind="humanoid"),
     "adept":     dict(size=(64, 96),  frame=(16, 24), kind="humanoid_short"),
 
-    # ---- side boss sheets, one per boss ------------------------------------
-    "ambush":    dict(size=(64, 168), frame=(16, 24), kind="saibaman",
-                      pal=SLIME_PALETTES["ambush"]),
-    "celljr":    dict(size=(64, 168), frame=(16, 24), kind="saibaman",
-                      pal=SLIME_PALETTES["celljr"]),
-    "nappa":     dict(size=(64, 256), frame=(16, 32), kind="humanoid"),
-    "cooler":    dict(size=(64, 256), frame=(16, 32), kind="humanoid"),
-    "recoome":   dict(size=(64, 256), frame=(16, 32), kind="humanoid"),
-    "dabura":    dict(size=(64, 256), frame=(16, 32), kind="humanoid"),
-    "bojack":    dict(size=(64, 256), frame=(16, 32), kind="humanoid"),
-    "broly":     dict(size=(64, 256), frame=(16, 32), kind="humanoid"),
-    "destroyer": dict(size=(64, 256), frame=(16, 32), kind="humanoid"),
+    # ---- placeholder sheets still generated (no hand art yet) --------------
+    # Bosses that now use hand-drawn sheets (nappa, recoome, dabura, bojack,
+    # broly, destroyer, superbuu, metalcooler, celljr, and the whole Frieza/
+    # Cooler/Cell/Buu/Ginyu roster) were removed here so re-running the
+    # generator can never overwrite that art. Only true placeholders remain.
     "invader":   dict(size=(64, 256), frame=(16, 32), kind="humanoid"),
-    "superbuu":  dict(size=(64, 160), frame=(16, 32), kind="humanoid"),
-    "metalcooler": dict(size=(64, 160), frame=(16, 32), kind="humanoid"),
     "kidbuu":    dict(size=(64, 160), frame=(16, 32), kind="humanoid"),
-    "frieza":    dict(size=(64, 96),  frame=(16, 24), kind="humanoid_short"),
-    "friezalord": dict(size=(64, 256), frame=(16, 32), kind="humanoid"),
 }
 
 # which facing each row represents, cycling so every row of every sheet is filled

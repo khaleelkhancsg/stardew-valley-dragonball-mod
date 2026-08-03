@@ -22,6 +22,19 @@ namespace SaiyanTransformations
         private const int BoomTelegraph = 8;
         private const int BoomTotal = 22;
 
+        private const int RushCooldown = 180;      // 3s between dashes
+        private const int RushTicks = 30;          // half-second burst
+        private const int RushSpeedBonus = 5;      // added to the monster's speed while rushing
+
+        private const int ParalyzeCooldown = 480;  // 8s
+        private const int ParalyzeMs = 700;        // frozen this long
+        private const float ParalyzeRange = 7f * 64f;
+
+        private const int ShockCooldown = 260;
+        private const int ShockTelegraph = 30;
+        private const int ShockTotal = 46;
+        private const float ShockRadius = 150f;
+
         /// <summary>modData key a boss carries once a phase grants it an extra ability.</summary>
         public const string PhaseAbilityKey = "khaleelkhan.SaiyanTransformations/phaseability";
 
@@ -34,9 +47,11 @@ namespace SaiyanTransformations
             public Vector2 Vel;       // orb only
             public float Angle;       // beam direction
             public float Length;      // beam length
-            public float HalfWidth;   // beam / orb radius
+            public float HalfWidth;   // beam / orb radius / boom radius
             public int Timer;
             public int Life;
+            public int Telegraph;     // boom: ticks before it detonates
+            public int Total;         // boom: ticks before it clears
             public int Damage;
             public Color Colour;
             public bool Hit;
@@ -48,6 +63,11 @@ namespace SaiyanTransformations
             public int KiCd;
             public int BeamCd;
             public int TeleportCd;
+            public int RushCd;
+            public int RushTicks;
+            public bool Rushing;
+            public int ParalyzeCd;
+            public int ShockCd;
             public float RegenAcc;
             public bool SelfDestruct;
             public int SelfDestructDamage;
@@ -130,6 +150,9 @@ namespace SaiyanTransformations
                     KiCd = Game1.random.Next(KiBlastCooldown),
                     BeamCd = Game1.random.Next(BeamCooldown),
                     TeleportCd = Game1.random.Next(TeleportCooldown),
+                    RushCd = Game1.random.Next(RushCooldown),
+                    ParalyzeCd = Game1.random.Next(ParalyzeCooldown),
+                    ShockCd = Game1.random.Next(ShockCooldown),
                     SelfDestruct = def.Abilities.HasFlag(BossAbility.SelfDestruct),
                     SelfDestructDamage = def.Abilities.HasFlag(BossAbility.SelfDestruct)
                         ? this.Scaled(def, 1.6f) : 0
@@ -164,6 +187,74 @@ namespace SaiyanTransformations
                 st.TeleportCd = TeleportCooldown;
                 this.Blink(monster);
             }
+
+            if (abilities.HasFlag(BossAbility.Rush))
+                this.UpdateRush(monster, st);
+
+            if (abilities.HasFlag(BossAbility.Paralyze) && --st.ParalyzeCd <= 0)
+            {
+                st.ParalyzeCd = ParalyzeCooldown;
+                this.Paralyze(monster);
+            }
+
+            if (abilities.HasFlag(BossAbility.Shockwave) && --st.ShockCd <= 0)
+            {
+                st.ShockCd = ShockCooldown;
+                this.SpawnWave(def, st.LastCentre);
+            }
+        }
+
+        /// <summary>A dash: a short, sharp burst of move speed so the boss lunges at the
+        /// player through its own chase AI, then drops back to normal.</summary>
+        private void UpdateRush(Monster monster, MState st)
+        {
+            if (st.Rushing)
+            {
+                if (--st.RushTicks <= 0)
+                {
+                    monster.speed -= RushSpeedBonus;
+                    st.Rushing = false;
+                }
+                return;
+            }
+
+            if (--st.RushCd <= 0)
+            {
+                st.RushCd = RushCooldown;
+                monster.speed += RushSpeedBonus;
+                st.RushTicks = RushTicks;
+                st.Rushing = true;
+                Owner.PlayCue("dodge", "wand");
+            }
+        }
+
+        /// <summary>Freeze the player where they stand for a moment - only if the boss is close
+        /// enough for it to read as a reaching, deliberate grab.</summary>
+        private void Paralyze(Monster monster)
+        {
+            Farmer p = Game1.player;
+            if (p == null || p.freezePause > 0f)
+                return;
+            if (Vector2.Distance(Centre(monster), Centre(p)) > ParalyzeRange)
+                return;
+
+            p.freezePause = ParalyzeMs;
+            Owner.PlayCue("dodge", "wand");
+            if (Owner.Config.ScreenFlash)
+                Game1.flashAlpha = 0.3f;
+            ModEntry.Notify("Held fast!");
+        }
+
+        private void SpawnWave(BossDefinition def, Vector2 centre)
+        {
+            this.hazards.Add(new Hazard
+            {
+                Kind = Kind.Boom, Pos = centre, HalfWidth = ShockRadius,
+                Telegraph = ShockTelegraph, Total = ShockTotal, Timer = 0,
+                Damage = this.Scaled(def, 1.2f),
+                Colour = Color.Lerp(def.AuraColor, Color.White, 0.4f)
+            });
+            Owner.PlayCue("kame_charge", "flameSpell");
         }
 
         private void Regenerate(Monster monster, MState st)
@@ -271,6 +362,7 @@ namespace SaiyanTransformations
             this.hazards.Add(new Hazard
             {
                 Kind = Kind.Boom, Pos = centre, HalfWidth = 96f, Timer = 0,
+                Telegraph = BoomTelegraph, Total = BoomTotal,
                 Damage = damage, Colour = new Color(255, 180, 90)
             });
             Owner.PlayCue("kame_impact", "explosion");
@@ -318,13 +410,13 @@ namespace SaiyanTransformations
 
                     case Kind.Boom:
                         h.Timer++;
-                        if (h.Timer == BoomTelegraph && !h.Hit)
+                        if (h.Timer == h.Telegraph && !h.Hit)
                         {
                             if (Vector2.Distance(h.Pos, player) <= h.HalfWidth)
                                 this.HitPlayer(h.Damage);
                             h.Hit = true;
                         }
-                        if (h.Timer >= BoomTotal)
+                        if (h.Timer >= h.Total)
                             h.Done = true;
                         break;
                 }
@@ -388,9 +480,10 @@ namespace SaiyanTransformations
                     case Kind.Boom:
                     {
                         Vector2 local = Game1.GlobalToLocal(Game1.viewport, h.Pos);
-                        float t = h.Timer / (float)BoomTotal;
+                        float t = h.Timer / (float)Math.Max(1, h.Total);
                         int frame = Math.Min(3, (int)(t * 4f));
-                        float scale = 3f + (t * 6f);
+                        // grow the ring out to the hazard's actual radius
+                        float scale = (0.3f + (0.7f * t)) * (h.HalfWidth / 16f);
                         b.Draw(tex, new Vector2(local.X - (16 * scale), local.Y - (16 * scale)),
                                new Rectangle(frame * 32, 64, 32, 32), h.Colour * (1f - t), 0f,
                                Vector2.Zero, scale, SpriteEffects.None, 0f);

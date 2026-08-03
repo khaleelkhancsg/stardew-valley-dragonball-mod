@@ -30,11 +30,14 @@ namespace SaiyanTransformations
     internal enum BossAbility
     {
         None = 0,
-        KiBlast = 1,       // aimed orbs flung at the player
-        Beam = 2,          // telegraphed line that scorches a corridor
-        Teleport = 4,      // blinks in beside the player
-        Regenerate = 8,    // heals itself over time
-        SelfDestruct = 16  // detonates where it dies
+        KiBlast = 1,        // aimed orbs flung at the player
+        Beam = 2,           // telegraphed line that scorches a corridor
+        Teleport = 4,       // blinks in beside the player
+        Regenerate = 8,     // heals itself over time
+        SelfDestruct = 16,  // detonates where it dies
+        Rush = 32,          // a sudden burst of speed - a dash at the player
+        Paralyze = 64,      // freezes the player in place for a moment
+        Shockwave = 128     // a telegraphed ring of force around the boss
     }
 
     internal sealed class BossDefinition
@@ -109,7 +112,11 @@ namespace SaiyanTransformations
 
         public static readonly BossDefinition[] All =
         {
-            // ---- the mine -------------------------------------------------
+            // Villains ordered by strength: deeper = stronger. Form/technique rewards are
+            // reassigned onto fitting villains after the old gate bosses were removed. New
+            // bosses have no custom sprite yet, so they fall back to the shared per-kind art.
+
+            // ---- 10-90: Saiyan saga, the Ginyu Force -----------------------
             new BossDefinition
             {
                 Id = "Saibamen", DisplayName = "Saibaman Squad",
@@ -119,16 +126,37 @@ namespace SaiyanTransformations
                                 MonsterKind.GreenSlime, MonsterKind.GreenSlime },
                 HealthMultiplier = 1.0f, DamageMultiplier = 1.0f, Resilience = 1,
                 Scale = 1.15f, AuraColor = new Color(120, 230, 90),
-                SlimeTint = new Color(96, 200, 72), Abilities = BossAbility.SelfDestruct
+                SlimeTint = new Color(96, 200, 72), Abilities = BossAbility.SelfDestruct,
+                SpriteSheet = "saibamen"
             },
             new BossDefinition
             {
-                Id = "BladeAdepts", DisplayName = "Blade Adepts",
-                Subtitle = "They fight with edges, not fists",
-                MineLevel = 30, Reward = BossReward.Technique, TechniqueId = "DestructoDisk",
-                Squad = new[] { MonsterKind.Skeleton, MonsterKind.Skeleton },
-                HealthMultiplier = 1.0f, DamageMultiplier = 1.0f, Resilience = 2,
-                Scale = 1.25f, AuraColor = new Color(210, 240, 255)
+                Id = "Guldo", DisplayName = "Guldo",
+                Subtitle = "He would stop time if you let him",
+                MineLevel = 20, Reward = BossReward.Technique, TechniqueId = "DestructoDisk",
+                Squad = new[] { MonsterKind.SquidKid },
+                HealthMultiplier = 0.95f, DamageMultiplier = 0.95f, Resilience = 2,
+                Scale = 1.15f, AuraColor = new Color(140, 210, 130),
+                Abilities = BossAbility.Teleport | BossAbility.Paralyze
+            },
+            new BossDefinition
+            {
+                Id = "Nappa", DisplayName = "Nappa",
+                Subtitle = "He is only here to warm up",
+                MineLevel = 30, Reward = BossReward.PowerCache, CacheKi = 20f, CacheAttack = 0.03f,
+                Squad = new[] { MonsterKind.ShadowBrute },
+                HealthMultiplier = 1.05f, DamageMultiplier = 1.05f, Resilience = 2,
+                Scale = 1.55f, AuraColor = new Color(230, 210, 130), SpriteSheet = "nappa",
+                Abilities = BossAbility.Shockwave
+            },
+            new BossDefinition
+            {
+                Id = "Jeice", DisplayName = "Jeice",
+                Subtitle = "The Red Magma, and half of a duo",
+                MineLevel = 40, Reward = BossReward.Supplies, SupplySenzu = 2, SupplyGold = 8000,
+                Squad = new[] { MonsterKind.ShadowBrute },
+                HealthMultiplier = 1.05f, DamageMultiplier = 1.05f, Resilience = 3,
+                Scale = 1.4f, AuraColor = new Color(255, 110, 90), Abilities = BossAbility.KiBlast
             },
             new BossDefinition
             {
@@ -139,44 +167,80 @@ namespace SaiyanTransformations
                 Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.15f, DamageMultiplier = 1.1f, Resilience = 3,
                 Scale = 1.5f, AuraColor = new Color(180, 120, 255),
-                PhaseCount = 1, PhaseAbility = BossAbility.KiBlast
+                PhaseCount = 1, PhaseAbility = BossAbility.KiBlast, SpriteSheet = "eliteboss"
+            },
+            new BossDefinition
+            {
+                Id = "Burter", DisplayName = "Burter",
+                Subtitle = "The fastest in the universe, he says",
+                MineLevel = 60, Reward = BossReward.PowerCache, CacheKi = 26f, CacheAttack = 0.04f,
+                Squad = new[] { MonsterKind.ShadowBrute },
+                HealthMultiplier = 1.1f, DamageMultiplier = 1.05f, Resilience = 3,
+                Scale = 1.55f, AuraColor = new Color(120, 180, 255), SpeedBonus = 2,
+                Abilities = BossAbility.Rush, SpriteSheet = "burter"
             },
             new BossDefinition
             {
                 Id = "BallGuardian1", DisplayName = "Guardian of the One-Star Ball",
                 Subtitle = "It will not give the sphere up quietly",
                 MineLevel = 70, Reward = BossReward.DragonBall, DragonBallNumber = 1,
-                Squad = new[] { MonsterKind.Skeleton, MonsterKind.Skeleton, MonsterKind.Skeleton },
+                Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute,
+                                MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.1f, DamageMultiplier = 1.05f, Resilience = 3,
-                Scale = 1.3f, AuraColor = new Color(255, 170, 60)
+                Scale = 1.3f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
             },
             new BossDefinition
             {
-                Id = "GinyuSquad", DisplayName = "The Ginyu Squad",
-                Subtitle = "They insist on posing first",
+                Id = "Recoome", DisplayName = "Recoome",
+                Subtitle = "He would like you to watch the whole routine",
+                MineLevel = 80, Reward = BossReward.PowerCache, CacheKi = 28f, CacheAttack = 0.04f,
+                Squad = new[] { MonsterKind.ShadowBrute },
+                HealthMultiplier = 1.1f, DamageMultiplier = 1.1f, Resilience = 3,
+                Scale = 1.55f, AuraColor = new Color(255, 140, 90), SpriteSheet = "recoome",
+                Abilities = BossAbility.Rush
+            },
+            new BossDefinition
+            {
+                Id = "CaptainGinyu", DisplayName = "Captain Ginyu",
+                Subtitle = "He leads the pose, and the Force",
                 MineLevel = 90, Reward = BossReward.Form, FormIndex = 2,
-                Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.SquidKid, MonsterKind.SquidKid },
-                HealthMultiplier = 1.15f, DamageMultiplier = 1.1f, Resilience = 3,
-                Scale = 1.3f, AuraColor = new Color(255, 150, 60), PhaseCount = 1
+                Squad = new[] { MonsterKind.ShadowBrute },
+                HealthMultiplier = 1.2f, DamageMultiplier = 1.15f, Resilience = 4,
+                Scale = 1.55f, AuraColor = new Color(180, 120, 255),
+                PhaseCount = 1, PhaseAbility = BossAbility.KiBlast, SpriteSheet = "captainginyu"
+            },
+
+            // ---- 100-190: Frieza saga, Cooler, the Cells -------------------
+            new BossDefinition
+            {
+                Id = "FriezaFirst", DisplayName = "Frieza (First Form)",
+                Subtitle = "Even restrained, he outclasses you",
+                MineLevel = 100, Reward = BossReward.Technique, TechniqueId = "SolarFlare",
+                Squad = new[] { MonsterKind.SquidKid },
+                HealthMultiplier = 1.15f, DamageMultiplier = 1.15f, Resilience = 4,
+                Scale = 1.3f, AuraColor = new Color(200, 150, 235),
+                Abilities = BossAbility.KiBlast, SpriteSheet = "friezafirst"
             },
             new BossDefinition
             {
-                Id = "KiAdepts", DisplayName = "Ki Adepts",
-                Subtitle = "Light gathers unpleasantly around them",
-                MineLevel = 110, Reward = BossReward.Technique, TechniqueId = "SolarFlare",
-                Squad = new[] { MonsterKind.SquidKid, MonsterKind.SquidKid, MonsterKind.SquidKid },
-                HealthMultiplier = 1.05f, DamageMultiplier = 1.15f, Resilience = 4,
-                Scale = 1.25f, AuraColor = new Color(255, 245, 170)
+                Id = "CoolerFirst", DisplayName = "Cooler (First Form)",
+                Subtitle = "Frieza's colder, worse brother",
+                MineLevel = 110, Reward = BossReward.PowerCache, CacheKi = 32f, CacheAttack = 0.045f,
+                Squad = new[] { MonsterKind.ShadowBrute },
+                HealthMultiplier = 1.15f, DamageMultiplier = 1.1f, Resilience = 5,
+                Scale = 1.5f, AuraColor = new Color(150, 230, 220), SpeedBonus = 1,
+                SpriteSheet = "coolerfirst"
             },
             new BossDefinition
             {
-                Id = "Emperor", DisplayName = "Emperor of the Universe",
-                Subtitle = "This is not even his final form",
+                Id = "FriezaFinal", DisplayName = "Frieza (Final Form)",
+                Subtitle = "No armour, no restraint, no mercy",
                 MineLevel = 140, Reward = BossReward.Form, FormIndex = 3,
-                Squad = new[] { MonsterKind.Serpent },
-                HealthMultiplier = 1.25f, DamageMultiplier = 1.15f, Resilience = 5,
-                Scale = 1.4f, AuraColor = new Color(255, 90, 190), Abilities = BossAbility.Beam,
-                PhaseCount = 2, PhaseAbility = BossAbility.KiBlast
+                Squad = new[] { MonsterKind.ShadowBrute },
+                HealthMultiplier = 1.28f, DamageMultiplier = 1.2f, Resilience = 6,
+                Scale = 1.6f, AuraColor = new Color(235, 205, 245),
+                Abilities = BossAbility.Beam | BossAbility.KiBlast,
+                PhaseCount = 2, PhaseAbility = BossAbility.KiBlast, SpriteSheet = "friezafinal"
             },
             new BossDefinition
             {
@@ -184,19 +248,31 @@ namespace SaiyanTransformations
                 Subtitle = "Coiled around its prize",
                 MineLevel = 130, Reward = BossReward.DragonBall, DragonBallNumber = 2,
                 BonusTechniqueId = "SpiritBomb",
-                Squad = new[] { MonsterKind.Serpent },
+                Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.15f, DamageMultiplier = 1.1f, Resilience = 5,
-                Scale = 1.4f, AuraColor = new Color(255, 170, 60)
+                Scale = 1.4f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
             },
             new BossDefinition
             {
-                Id = "PerfectAndroid", DisplayName = "The Perfect Android",
-                Subtitle = "It regenerates. Finish it properly.",
-                MineLevel = 190, Reward = BossReward.Form, FormIndex = 4,
-                Squad = new[] { MonsterKind.Mummy },
-                HealthMultiplier = 1.3f, DamageMultiplier = 1.2f, Resilience = 6,
-                Scale = 1.6f, AuraColor = new Color(140, 240, 140),
-                Abilities = BossAbility.Beam | BossAbility.Regenerate, PhaseCount = 2
+                Id = "FriezaGolden", DisplayName = "Golden Frieza",
+                Subtitle = "He has touched god ki. It shows.",
+                MineLevel = 280, Reward = BossReward.PowerCache, CacheKi = 78f, CacheAttack = 0.12f,
+                Squad = new[] { MonsterKind.ShadowBrute },
+                HealthMultiplier = 1.78f, DamageMultiplier = 1.44f, Resilience = 13,
+                Scale = 2.2f, AuraColor = new Color(255, 215, 90),
+                Abilities = BossAbility.Beam | BossAbility.KiBlast, SpeedBonus = 3,
+                PhaseCount = 2, PhaseAbility = BossAbility.KiBlast, SpriteSheet = "friezagolden"
+            },
+            new BossDefinition
+            {
+                Id = "CoolerFinal", DisplayName = "Cooler (Final Form)",
+                Subtitle = "The form his brother never reached",
+                MineLevel = 150, Reward = BossReward.Supplies, SupplySenzu = 3, SupplyGold = 16000,
+                Squad = new[] { MonsterKind.ShadowBrute },
+                HealthMultiplier = 1.25f, DamageMultiplier = 1.2f, Resilience = 6,
+                Scale = 1.6f, AuraColor = new Color(110, 210, 200),
+                Abilities = BossAbility.Beam, SpeedBonus = 1, PhaseCount = 1,
+                SpriteSheet = "coolerfinal"
             },
             new BossDefinition
             {
@@ -205,46 +281,110 @@ namespace SaiyanTransformations
                 MineLevel = 160, Reward = BossReward.DragonBall, DragonBallNumber = 3,
                 Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.2f, DamageMultiplier = 1.15f, Resilience = 6,
-                Scale = 1.45f, AuraColor = new Color(255, 170, 60)
+                Scale = 1.45f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
             },
             new BossDefinition
             {
-                Id = "CrimsonMaster", DisplayName = "The Crimson Master",
-                Subtitle = "He burns himself to fight you, and does not seem to mind",
-                MineLevel = 210, Reward = BossReward.Technique, TechniqueId = "Kaioken",
-                Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute },
+                Id = "CellImperfect", DisplayName = "Imperfect Cell",
+                Subtitle = "Still feeding. Do not let him.",
+                MineLevel = 170, Reward = BossReward.PowerCache, CacheKi = 38f, CacheAttack = 0.055f,
+                Squad = new[] { MonsterKind.Mummy },
                 HealthMultiplier = 1.2f, DamageMultiplier = 1.15f, Resilience = 6,
-                Scale = 1.55f, AuraColor = new Color(255, 72, 62)
+                Scale = 1.4f, AuraColor = new Color(120, 200, 120),
+                Abilities = BossAbility.Regenerate, SpriteSheet = "cellimperfect"
             },
             new BossDefinition
             {
-                Id = "Majin", DisplayName = "Majin",
-                Subtitle = "Nothing about this should be possible",
-                MineLevel = 240, Reward = BossReward.Form, FormIndex = 5,
-                Squad = new[] { MonsterKind.ShadowBrute },
-                HealthMultiplier = 1.5f, DamageMultiplier = 1.25f, Resilience = 8,
-                Scale = 2.0f, AuraColor = new Color(255, 130, 210),
-                PhaseCount = 2, PhaseAbility = BossAbility.Teleport
+                Id = "CellSemiPerfect", DisplayName = "Semi-Perfect Cell",
+                Subtitle = "One android short of complete",
+                MineLevel = 175, Reward = BossReward.Supplies, SupplySenzu = 3, SupplyGold = 18000,
+                Squad = new[] { MonsterKind.Mummy },
+                HealthMultiplier = 1.25f, DamageMultiplier = 1.2f, Resilience = 7,
+                Scale = 1.55f, AuraColor = new Color(140, 220, 140),
+                Abilities = BossAbility.Regenerate, SpriteSheet = "cellsemiperfect"
+            },
+            new BossDefinition
+            {
+                Id = "CellJuniors", DisplayName = "Cell Juniors",
+                Subtitle = "Small, blue, and merciless",
+                MineLevel = 180, Reward = BossReward.Supplies, SupplySenzu = 3, SupplyGold = 20000,
+                Squad = new[] { MonsterKind.GreenSlime, MonsterKind.GreenSlime,
+                                MonsterKind.GreenSlime, MonsterKind.GreenSlime },
+                HealthMultiplier = 1.25f, DamageMultiplier = 1.2f, Resilience = 6,
+                Scale = 1.05f, AuraColor = new Color(150, 210, 255), SpriteSheet = "celljr"
+            },
+            new BossDefinition
+            {
+                Id = "CellPerfect", DisplayName = "Perfect Cell",
+                Subtitle = "Complete. And he wants you to know it.",
+                MineLevel = 190, Reward = BossReward.Form, FormIndex = 4,
+                Squad = new[] { MonsterKind.Mummy },
+                HealthMultiplier = 1.35f, DamageMultiplier = 1.25f, Resilience = 7,
+                Scale = 1.7f, AuraColor = new Color(140, 240, 140),
+                Abilities = BossAbility.Beam | BossAbility.Regenerate, PhaseCount = 2,
+                SpriteSheet = "cellperfect"
             },
 
-            // ---- skull cavern (mine level 120 + floor) ----------------------
+            // ---- 200-300: Buu saga and the deep endgame --------------------
+            new BossDefinition
+            {
+                Id = "Bojack", DisplayName = "Bojack",
+                Subtitle = "Sealed away once. Not well enough.",
+                MineLevel = 200, Reward = BossReward.Technique, TechniqueId = "Kaioken",
+                Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute },
+                HealthMultiplier = 1.3f, DamageMultiplier = 1.2f, Resilience = 7,
+                Scale = 1.55f, AuraColor = new Color(120, 230, 170), SpriteSheet = "bojack"
+            },
+            new BossDefinition
+            {
+                Id = "Dabura", DisplayName = "Dabura, Demon King",
+                Subtitle = "Spit turns flesh to stone",
+                MineLevel = 210, Reward = BossReward.Supplies, SupplySenzu = 3, SupplyGold = 24000,
+                Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute,
+                                MonsterKind.ShadowBrute },
+                HealthMultiplier = 1.3f, DamageMultiplier = 1.2f, Resilience = 8,
+                Scale = 1.45f, AuraColor = new Color(200, 60, 60), SpriteSheet = "dabura",
+                Abilities = BossAbility.Paralyze
+            },
             new BossDefinition
             {
                 Id = "BallGuardian4", DisplayName = "Guardian of the Four-Star Ball",
-                Subtitle = "Skull Cavern, ten floors down",
+                Subtitle = "Deep in the Skull Cavern now",
                 MineLevel = 220, Reward = BossReward.DragonBall, DragonBallNumber = 4,
-                Squad = new[] { MonsterKind.Serpent, MonsterKind.Serpent },
-                HealthMultiplier = 1.3f, DamageMultiplier = 1.2f, Resilience = 7,
-                Scale = 1.45f, AuraColor = new Color(255, 170, 60)
+                Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute },
+                HealthMultiplier = 1.3f, DamageMultiplier = 1.2f, Resilience = 8,
+                Scale = 1.45f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
             },
             new BossDefinition
             {
-                Id = "Ascetics", DisplayName = "The Ascetics",
-                Subtitle = "They guard a cache, and they do not need it themselves",
-                MineLevel = 180, Reward = BossReward.Supplies,
+                Id = "BuuFat", DisplayName = "Fat Buu",
+                Subtitle = "Childlike, until it is not",
+                MineLevel = 225, Reward = BossReward.PowerCache, CacheKi = 48f, CacheAttack = 0.07f,
+                Squad = new[] { MonsterKind.Mummy },
+                HealthMultiplier = 1.35f, DamageMultiplier = 1.25f, Resilience = 8,
+                Scale = 1.7f, AuraColor = new Color(255, 180, 220),
+                Abilities = BossAbility.Regenerate, SpriteSheet = "buufat"
+            },
+            new BossDefinition
+            {
+                Id = "SuperBuu", DisplayName = "Super Buu",
+                Subtitle = "It copies what it eats",
+                MineLevel = 230, Reward = BossReward.Supplies, SupplySenzu = 4, SupplyGold = 30000,
                 Squad = new[] { MonsterKind.Mummy, MonsterKind.Mummy },
-                HealthMultiplier = 1.3f, DamageMultiplier = 1.2f, Resilience = 8,
-                Scale = 1.55f, AuraColor = new Color(160, 220, 255)
+                HealthMultiplier = 1.4f, DamageMultiplier = 1.25f, Resilience = 8,
+                Scale = 1.6f, AuraColor = new Color(255, 130, 210), SpriteSheet = "superbuu",
+                Abilities = BossAbility.Regenerate
+            },
+            new BossDefinition
+            {
+                Id = "BuuSuperGohan", DisplayName = "Super Buu (Gohan absorbed)",
+                Subtitle = "It ate a demigod and grew calm",
+                MineLevel = 240, Reward = BossReward.Form, FormIndex = 5,
+                Squad = new[] { MonsterKind.Mummy },
+                HealthMultiplier = 1.55f, DamageMultiplier = 1.3f, Resilience = 9,
+                Scale = 1.9f, AuraColor = new Color(255, 120, 200),
+                Abilities = BossAbility.Beam | BossAbility.Regenerate | BossAbility.Teleport,
+                PhaseCount = 2, PhaseAbility = BossAbility.Teleport, SpriteSheet = "buusupergohan"
             },
             new BossDefinition
             {
@@ -254,134 +394,13 @@ namespace SaiyanTransformations
                 Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute,
                                 MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.35f, DamageMultiplier = 1.25f, Resilience = 9,
-                Scale = 1.6f, AuraColor = new Color(255, 170, 60)
+                Scale = 1.6f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
             },
-            new BossDefinition
-            {
-                Id = "Vanishers", DisplayName = "The Vanishers",
-                Subtitle = "They are never quite where you struck",
-                MineLevel = 265, Reward = BossReward.Supplies,
-                Squad = new[] { MonsterKind.Serpent, MonsterKind.Serpent, MonsterKind.Serpent },
-                HealthMultiplier = 1.35f, DamageMultiplier = 1.25f, Resilience = 9,
-                Scale = 1.5f, AuraColor = new Color(220, 245, 255),
-                Abilities = BossAbility.Teleport, SpeedBonus = 3
-            },
-            new BossDefinition
-            {
-                Id = "BallGuardian6", DisplayName = "Guardian of the Six-Star Ball",
-                Subtitle = "The dust never settles around them",
-                MineLevel = 270, Reward = BossReward.DragonBall, DragonBallNumber = 6,
-                Squad = new[] { MonsterKind.Mummy, MonsterKind.Mummy, MonsterKind.Mummy },
-                HealthMultiplier = 1.4f, DamageMultiplier = 1.3f, Resilience = 10,
-                Scale = 1.6f, AuraColor = new Color(255, 170, 60)
-            },
-            new BossDefinition
-            {
-                Id = "BallGuardian7", DisplayName = "Guardian of the Seven-Star Ball",
-                Subtitle = "The last sphere is the worst defended by far",
-                MineLevel = 290, Reward = BossReward.DragonBall, DragonBallNumber = 7,
-                Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute,
-                                MonsterKind.Serpent, MonsterKind.Serpent },
-                HealthMultiplier = 1.5f, DamageMultiplier = 1.35f, Resilience = 11,
-                Scale = 1.7f, AuraColor = new Color(255, 170, 60)
-            },
-
-            // ---- extra mine encounters (fill the gaps between the gate fights) -----
-            // Optional side-bosses; they never gate a form or technique, so they can be
-            // skipped, and they auto-scale to their floor like every other boss.
-            new BossDefinition
-            {
-                Id = "CavernAmbush", DisplayName = "Cavern Ambushers",
-                Subtitle = "They were waiting in the dark",
-                MineLevel = 20, Reward = BossReward.Supplies, SupplySenzu = 1, SupplyGold = 4000,
-                Squad = new[] { MonsterKind.GreenSlime, MonsterKind.GreenSlime,
-                                MonsterKind.GreenSlime },
-                HealthMultiplier = 0.9f, DamageMultiplier = 0.95f, Resilience = 1,
-                Scale = 1.1f, AuraColor = new Color(150, 200, 120), SpriteSheet = "ambush"
-            },
-            new BossDefinition
-            {
-                Id = "Nappa", DisplayName = "Nappa",
-                Subtitle = "He is only here to warm up",
-                MineLevel = 40, Reward = BossReward.PowerCache, CacheKi = 20f, CacheAttack = 0.03f,
-                Squad = new[] { MonsterKind.ShadowBrute },
-                HealthMultiplier = 1.05f, DamageMultiplier = 1.05f, Resilience = 2,
-                Scale = 1.55f, AuraColor = new Color(230, 210, 130), SpriteSheet = "nappa"
-            },
-            new BossDefinition
-            {
-                Id = "CellJuniors", DisplayName = "Cell Juniors",
-                Subtitle = "Small, blue, and merciless",
-                MineLevel = 150, Reward = BossReward.Supplies, SupplySenzu = 3, SupplyGold = 14000,
-                Squad = new[] { MonsterKind.GreenSlime, MonsterKind.GreenSlime,
-                                MonsterKind.GreenSlime, MonsterKind.GreenSlime },
-                HealthMultiplier = 1.15f, DamageMultiplier = 1.15f, Resilience = 4,
-                Scale = 1.05f, AuraColor = new Color(150, 210, 255), SpriteSheet = "celljr"
-            },
-            new BossDefinition
-            {
-                Id = "Recoome", DisplayName = "Recoome",
-                Subtitle = "He would like you to watch the whole routine",
-                MineLevel = 60, Reward = BossReward.PowerCache, CacheKi = 26f, CacheAttack = 0.04f,
-                Squad = new[] { MonsterKind.ShadowBrute },
-                HealthMultiplier = 1.1f, DamageMultiplier = 1.05f, Resilience = 3,
-                Scale = 1.55f, AuraColor = new Color(255, 140, 90), SpriteSheet = "recoome"
-            },
-            new BossDefinition
-            {
-                Id = "FriezaElites", DisplayName = "Frieza's Elites",
-                Subtitle = "The vanguard of a very bad day",
-                MineLevel = 80, Reward = BossReward.Supplies, SupplySenzu = 2, SupplyGold = 12000,
-                Squad = new[] { MonsterKind.SquidKid, MonsterKind.SquidKid, MonsterKind.SquidKid },
-                HealthMultiplier = 1.05f, DamageMultiplier = 1.1f, Resilience = 3,
-                Scale = 1.25f, AuraColor = new Color(210, 130, 255), SpriteSheet = "frieza"
-            },
-            new BossDefinition
-            {
-                Id = "Cooler", DisplayName = "Cooler",
-                Subtitle = "Frieza's colder, worse brother",
-                MineLevel = 120, Reward = BossReward.PowerCache, CacheKi = 34f, CacheAttack = 0.05f,
-                Squad = new[] { MonsterKind.ShadowBrute },
-                HealthMultiplier = 1.05f, DamageMultiplier = 1.05f, Resilience = 3,
-                Scale = 1.45f, AuraColor = new Color(150, 230, 220), SpriteSheet = "cooler",
-                SpeedBonus = 1, PhaseCount = 1, PhaseAbility = BossAbility.Beam
-            },
-            new BossDefinition
-            {
-                Id = "Dabura", DisplayName = "Dabura, Demon King",
-                Subtitle = "Spit turns flesh to stone",
-                MineLevel = 170, Reward = BossReward.Supplies, SupplySenzu = 3, SupplyGold = 18000,
-                Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute,
-                                MonsterKind.ShadowBrute },
-                HealthMultiplier = 1.2f, DamageMultiplier = 1.15f, Resilience = 6,
-                Scale = 1.45f, AuraColor = new Color(200, 60, 60), SpriteSheet = "dabura"
-            },
-            new BossDefinition
-            {
-                Id = "Bojack", DisplayName = "Bojack",
-                Subtitle = "Sealed away once. Not well enough.",
-                MineLevel = 200, Reward = BossReward.PowerCache, CacheKi = 40f, CacheAttack = 0.06f,
-                Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute },
-                HealthMultiplier = 1.2f, DamageMultiplier = 1.15f, Resilience = 6,
-                Scale = 1.55f, AuraColor = new Color(120, 230, 170), SpriteSheet = "bojack"
-            },
-            new BossDefinition
-            {
-                Id = "SuperBuu", DisplayName = "Super Buu",
-                Subtitle = "It copies what it eats",
-                MineLevel = 230, Reward = BossReward.Supplies, SupplySenzu = 3, SupplyGold = 22000,
-                Squad = new[] { MonsterKind.Mummy, MonsterKind.Mummy },
-                HealthMultiplier = 1.3f, DamageMultiplier = 1.2f, Resilience = 7,
-                Scale = 1.6f, AuraColor = new Color(255, 130, 210), SpriteSheet = "superbuu",
-                Abilities = BossAbility.Regenerate
-            },
-
-            // ---- deep Skull Cavern challenges (endgame, well past the last guardian) ---
             new BossDefinition
             {
                 Id = "MetalCoolerLegion", DisplayName = "Metal Cooler Legion",
                 Subtitle = "Break one and the next steps forward",
-                MineLevel = 260, Reward = BossReward.Supplies, SupplySenzu = 4, SupplyGold = 40000,
+                MineLevel = 260, Reward = BossReward.Supplies, SupplySenzu = 4, SupplyGold = 45000,
                 Squad = new[] { MonsterKind.Mummy, MonsterKind.Mummy, MonsterKind.Mummy,
                                 MonsterKind.Mummy },
                 HealthMultiplier = 1.5f, DamageMultiplier = 1.35f, Resilience = 11,
@@ -389,35 +408,58 @@ namespace SaiyanTransformations
             },
             new BossDefinition
             {
-                Id = "Broly", DisplayName = "Broly, the Legendary",
-                Subtitle = "He does not stop, and he does not tire",
-                MineLevel = 280, Reward = BossReward.PowerCache, CacheKi = 60f, CacheAttack = 0.10f,
-                Squad = new[] { MonsterKind.ShadowBrute },
-                HealthMultiplier = 1.7f, DamageMultiplier = 1.4f, Resilience = 12,
-                Scale = 2.2f, AuraColor = new Color(150, 240, 120), SpriteSheet = "broly",
-                SpeedBonus = 1, PhaseCount = 2, PhaseAbility = BossAbility.KiBlast
-            },
-            new BossDefinition
-            {
                 Id = "KidBuu", DisplayName = "Kid Buu",
                 Subtitle = "The original, and the worst",
-                MineLevel = 295, Reward = BossReward.Supplies, SupplySenzu = 5, SupplyGold = 60000,
+                MineLevel = 265, Reward = BossReward.PowerCache, CacheKi = 62f, CacheAttack = 0.10f,
                 Squad = new[] { MonsterKind.Mummy, MonsterKind.Mummy,
                                 MonsterKind.Mummy, MonsterKind.Mummy },
-                HealthMultiplier = 1.7f, DamageMultiplier = 1.4f, Resilience = 12,
+                HealthMultiplier = 1.65f, DamageMultiplier = 1.4f, Resilience = 12,
                 Scale = 1.7f, AuraColor = new Color(255, 150, 210), SpriteSheet = "kidbuu",
-                Abilities = BossAbility.Regenerate, SpeedBonus = 2, PhaseCount = 1
+                Abilities = BossAbility.Regenerate | BossAbility.Shockwave,
+                SpeedBonus = 2, PhaseCount = 1
             },
             new BossDefinition
             {
-                Id = "Frieza", DisplayName = "Frieza",
-                Subtitle = "He will show you each of his forms in turn",
-                MineLevel = 100, Reward = BossReward.PowerCache, CacheKi = 30f, CacheAttack = 0.045f,
+                Id = "BallGuardian6", DisplayName = "Guardian of the Six-Star Ball",
+                Subtitle = "The dust never settles around them",
+                MineLevel = 270, Reward = BossReward.DragonBall, DragonBallNumber = 6,
+                Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute,
+                                MonsterKind.ShadowBrute },
+                HealthMultiplier = 1.4f, DamageMultiplier = 1.3f, Resilience = 10,
+                Scale = 1.6f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
+            },
+            new BossDefinition
+            {
+                Id = "Broly", DisplayName = "Broly, the Legendary",
+                Subtitle = "He does not stop, and he does not tire",
+                MineLevel = 205, Reward = BossReward.PowerCache, CacheKi = 44f, CacheAttack = 0.07f,
                 Squad = new[] { MonsterKind.ShadowBrute },
-                HealthMultiplier = 1.2f, DamageMultiplier = 1.15f, Resilience = 5,
-                Scale = 1.6f, AuraColor = new Color(210, 150, 235), SpriteSheet = "friezalord",
-                Abilities = BossAbility.KiBlast, SpeedBonus = 1,
-                PhaseCount = 2, PhaseAbility = BossAbility.Beam
+                HealthMultiplier = 1.4f, DamageMultiplier = 1.25f, Resilience = 8,
+                Scale = 2.0f, AuraColor = new Color(150, 240, 120), SpriteSheet = "broly",
+                Abilities = BossAbility.Shockwave, SpeedBonus = 1,
+                PhaseCount = 2, PhaseAbility = BossAbility.KiBlast
+            },
+            new BossDefinition
+            {
+                Id = "FriezaBlack", DisplayName = "Black Frieza",
+                Subtitle = "He surpassed everyone. Quietly.",
+                MineLevel = 285, Reward = BossReward.PowerCache, CacheKi = 80f, CacheAttack = 0.13f,
+                Squad = new[] { MonsterKind.ShadowBrute },
+                HealthMultiplier = 1.8f, DamageMultiplier = 1.45f, Resilience = 13,
+                Scale = 2.2f, AuraColor = new Color(130, 60, 160),
+                Abilities = BossAbility.Beam | BossAbility.KiBlast | BossAbility.Teleport,
+                SpeedBonus = 3, PhaseCount = 2, PhaseAbility = BossAbility.Beam,
+                SpriteSheet = "friezablack"
+            },
+            new BossDefinition
+            {
+                Id = "BallGuardian7", DisplayName = "Guardian of the Seven-Star Ball",
+                Subtitle = "The last sphere is the worst defended by far",
+                MineLevel = 290, Reward = BossReward.DragonBall, DragonBallNumber = 7,
+                Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute,
+                                MonsterKind.ShadowBrute, MonsterKind.ShadowBrute },
+                HealthMultiplier = 1.5f, DamageMultiplier = 1.35f, Resilience = 11,
+                Scale = 1.7f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
             },
             new BossDefinition
             {
@@ -428,8 +470,8 @@ namespace SaiyanTransformations
                                 MonsterKind.ShadowBrute, MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.85f, DamageMultiplier = 1.5f, Resilience = 14,
                 Scale = 2.4f, AuraColor = new Color(190, 120, 255), SpriteSheet = "destroyer",
-                Abilities = BossAbility.Teleport | BossAbility.KiBlast, SpeedBonus = 3,
-                PhaseCount = 2, PhaseAbility = BossAbility.Beam
+                Abilities = BossAbility.Teleport | BossAbility.KiBlast | BossAbility.Rush,
+                SpeedBonus = 3, PhaseCount = 2, PhaseAbility = BossAbility.Beam
             }
         };
 
@@ -540,7 +582,10 @@ namespace SaiyanTransformations
 
         /// <summary>Lines queued to show as a dialogue box on the next free tick, so a warp-in
         /// or a kill does not try to open a dialogue mid-transition.</summary>
-        private string[] pendingDialogue;
+        // a boss's spoken line, queued to open as a portrait dialogue box on the next free tick
+        private string pendingSpeechId;
+        private string pendingSpeechName;
+        private string pendingSpeech;
 
         /// <summary>Drives the special moves marquee bosses use on top of their melee.</summary>
         private readonly BossAbilityRunner abilities;
@@ -576,7 +621,7 @@ namespace SaiyanTransformations
             this.active = null;
             this.sawAliveThisVisit = false;
             this.introTicks = 0;
-            this.pendingDialogue = null;
+            this.pendingSpeech = this.pendingSpeechId = this.pendingSpeechName = null;
             this.activeHealth = this.activeMaxHealth = this.activeAlive = 0;
             this.abilities?.Reset();
         }
@@ -741,6 +786,23 @@ namespace SaiyanTransformations
             }
         }
 
+        /// <summary>Frame size for each hand-drawn boss sheet. These are deliberately larger
+        /// than a vanilla monster so the art keeps its detail; a sheet not listed here falls
+        /// back to its monster kind's native frame size.</summary>
+        private static readonly Dictionary<string, (int W, int H)> SheetDims =
+            new Dictionary<string, (int, int)>
+            {
+                ["saibamen"] = (24, 34), ["celljr"] = (22, 32), ["friezafirst"] = (24, 36),
+                ["nappa"] = (30, 46), ["eliteboss"] = (28, 44), ["burter"] = (28, 46),
+                ["recoome"] = (32, 48), ["captainginyu"] = (28, 44), ["friezafinal"] = (26, 42),
+                ["friezagolden"] = (28, 46), ["friezablack"] = (28, 46), ["coolerfirst"] = (28, 44),
+                ["coolerfinal"] = (30, 48), ["metalcooler"] = (28, 46), ["cellimperfect"] = (30, 46),
+                ["cellsemiperfect"] = (30, 48), ["cellperfect"] = (30, 50), ["bojack"] = (28, 46),
+                ["dabura"] = (28, 46), ["broly"] = (32, 50), ["destroyer"] = (30, 50),
+                ["buufat"] = (32, 46), ["buusupergohan"] = (30, 50), ["superbuu"] = (28, 46),
+                ["guardian"] = (30, 48)
+            };
+
         /// <summary>Swap in a sprite sheet for this instance only. A boss may name its own
         /// sheet (<paramref name="overrideSheet"/>) so it looks unique; otherwise it falls
         /// back to the shared per-kind sheet. Ordinary monsters elsewhere keep vanilla art.</summary>
@@ -754,7 +816,15 @@ namespace SaiyanTransformations
             if (!string.IsNullOrEmpty(overrideSheet))
             {
                 asset = overrideSheet;
-                FrameDimsFor(kind, out w, out h);
+                if (SheetDims.TryGetValue(overrideSheet, out (int W, int H) d))
+                {
+                    w = d.W;
+                    h = d.H;
+                }
+                else
+                {
+                    FrameDimsFor(kind, out w, out h);   // e.g. the invader placeholder
+                }
             }
             else if (Sheets.TryGetValue(kind, out MonsterSheet sheet))
             {
@@ -926,18 +996,25 @@ namespace SaiyanTransformations
             Owner.PlayCue("boss_roar", "shadowpeep");
             if (Owner.Config.ScreenFlash)
                 Game1.flashAlpha = 0.5f;
-            ModEntry.Notify(returning
-                ? $"{def.DisplayName} is still here."
-                : $"{def.DisplayName} blocks the way down!");
 
-            // a fresh spawn speaks; a boss you merely walked back in on does not repeat itself
-            if (!returning)
-                this.pendingDialogue = this.EncounterLines(def);
+            // a fresh spawn gets its scene and its line; a boss you merely walked back in on
+            // just gets a quiet reminder that it is still down there
+            if (returning)
+            {
+                ModEntry.Notify($"{def.DisplayName} is still here.");
+                return;
+            }
+
+            Beat beat = this.EncounterBeat(def);
+            if (beat != null)
+                this.Play(beat, def);
+            else
+                ModEntry.Notify($"{def.DisplayName} blocks the way down!");
         }
 
-        /// <summary>The meeting line for a boss, chosen by how many times it has been beaten:
-        /// first meeting, second, third, then a repeatable line from the fourth on.</summary>
-        private string[] EncounterLines(BossDefinition def)
+        /// <summary>The meeting beat for a boss, chosen by how many times it has been beaten:
+        /// first meeting, second, third, then a repeatable beat from the fourth on.</summary>
+        private Beat EncounterBeat(BossDefinition def)
         {
             BossLines lines = BossDialogue.For(def?.Id);
             if (lines == null)
@@ -952,26 +1029,36 @@ namespace SaiyanTransformations
             }
         }
 
-        /// <summary>Show queued lines as a dialogue box once the world can display one.</summary>
+        /// <summary>Narration goes out immediately as a narrator toast; the boss's own words are
+        /// queued to open as a portrait dialogue box on the next free tick.</summary>
+        private void Play(Beat beat, BossDefinition def)
+        {
+            if (beat == null)
+                return;
+            if (!string.IsNullOrEmpty(beat.Narration))
+                ModEntry.Notify(beat.Narration);
+            if (!string.IsNullOrEmpty(beat.Speech))
+            {
+                this.pendingSpeechId = def.Id;
+                this.pendingSpeechName = def.DisplayName;
+                this.pendingSpeech = beat.Speech;
+            }
+        }
+
+        /// <summary>Open the queued boss speech as a portrait dialogue box once the world can
+        /// display one (not mid-warp, not with a menu already open).</summary>
         private void ShowPendingDialogue()
         {
-            if (this.pendingDialogue == null)
+            if (this.pendingSpeech == null)
                 return;
             if (!Context.IsPlayerFree || Game1.activeClickableMenu != null || Game1.eventUp)
                 return;
 
-            string[] lines = this.pendingDialogue;
-            this.pendingDialogue = null;
-            if (lines.Length == 0)
-                return;
-            try
-            {
-                Game1.multipleDialogues(lines);
-            }
-            catch (Exception)
-            {
-                ModEntry.Notify(lines[0]);
-            }
+            string id = this.pendingSpeechId;
+            string name = this.pendingSpeechName;
+            string speech = this.pendingSpeech;
+            this.pendingSpeech = this.pendingSpeechId = this.pendingSpeechName = null;
+            Owner.ShowBossSpeech(id, name, speech);
         }
 
         // ---------------------------------------------------------------- update
@@ -1285,10 +1372,10 @@ namespace SaiyanTransformations
 
             this.GrantReward(def, priorDefeats);
 
-            // the boss's parting line, shown once the drop menus (if any) have cleared
+            // the boss's parting scene and line, shown once the drop menus (if any) have cleared
             BossLines lines = BossDialogue.For(def.Id);
             if (lines != null)
-                this.pendingDialogue = lines.Defeat;
+                this.Play(lines.Defeat, def);
 
             // the unlock announcement itself is handled by ModEntry's unlock check
         }
