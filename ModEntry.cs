@@ -1463,6 +1463,26 @@ namespace SaiyanTransformations
             }
         }
 
+        /// <summary>Show several lines as consecutive portrait dialogue pages from one speaker
+        /// (page breaks via the "#$b#" dialogue token), so a boss can say a few lines in a row.</summary>
+        internal void ShowSpeechLines(string id, string displayName, string[] lines)
+        {
+            if (lines == null || lines.Length == 0)
+                return;
+            try
+            {
+                Texture2D portrait = this.GetBossPortrait(id);
+                NPC speaker = new NPC(null, new Vector2(-2000f, -2000f), "", 0,
+                                      displayName ?? "???", false, portrait);
+                speaker.displayName = displayName ?? "???";
+                Game1.DrawDialogue(new Dialogue(speaker, null, string.Join("#$b#", lines)));
+            }
+            catch (Exception)
+            {
+                Game1.multipleDialogues(lines);     // portrait-less fallback
+            }
+        }
+
         /// <summary>Play a sound cue without letting a missing cue take the mod down.</summary>
         internal static void SafeSound(string cue)
         {

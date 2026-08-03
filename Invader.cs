@@ -188,70 +188,136 @@ namespace SaiyanTransformations
 
         // -------------------------------------------------------------- dialogue
 
-        /// <summary>Show a short run of dialogue boxes if the world is in a state that can
-        /// display them, otherwise fall back to a HUD line so nothing is ever lost.</summary>
+        /// <summary>Speak through the portrait dialogue system so his own face appears, or fall
+        /// back to a HUD line if the world cannot open a dialogue right now.</summary>
         private void Say(string[] lines)
         {
             if (lines == null || lines.Length == 0)
                 return;
-
-            try
-            {
-                if (Context.IsPlayerFree && !Game1.eventUp)
-                {
-                    Game1.multipleDialogues(lines);
-                    return;
-                }
-            }
-            catch (Exception)
-            {
-                // fall through to the safe path
-            }
-
-            ModEntry.Notify(lines[0]);
+            if (Context.IsPlayerFree && !Game1.eventUp)
+                Owner.ShowSpeechLines("Invader", "Multiversal Invader", lines);
+            else
+                ModEntry.Notify(lines[0]);
         }
 
+        private static string[] Pick(string[][] pool) => pool[Game1.random.Next(pool.Length)];
+
+        /// <summary>He is met dozens of times a run, so his lines are drawn from deep pools:
+        /// first meetings, then an escalating rivalry that remembers being fought.</summary>
         private string[] IntroLines(bool fromMine, int defeats)
         {
             if (defeats <= 0)
-            {
-                return fromMine
-                    ? new[]
-                    {
-                        "The rock down here is thin. I felt you bending fate through it from a realm away.",
-                        "I have crossed a thousand dead worlds to find a fight worth having.",
-                        "So. Show me why yours is still standing."
-                    }
-                    : new[]
-                    {
-                        "Your sky tore open for a reason, farmer. I stepped through the seam.",
-                        "I do not lurk in caves and wait to be found. I come to where you live.",
-                        "Put down the hoe. You will want both hands for this."
-                    };
-            }
-
-            // he remembers being beaten, and it only makes him keener
-            return fromMine
-                ? new[]
-                {
-                    $"You put me down before. The multiverse is wide — I simply walked back in.",
-                    "This body is stronger than the last. I made certain of it."
-                }
-                : new[]
-                {
-                    "Again. And this time I remember exactly how you move.",
-                    "One reality beat me. I have burned through several since. Let us see."
-                };
+                return Pick(fromMine ? FirstMine : FirstOverworld);
+            if (defeats >= 5 && Game1.random.NextDouble() < 0.45)
+                return Pick(DeepReturn);
+            return Pick(fromMine ? ReturnMine : ReturnOverworld);
         }
 
-        private string[] DefeatLines()
+        private string[] DefeatLines() => Pick(DefeatPool);
+
+        // ---- first meeting, deep in the mine ----------------------------------
+        private static readonly string[][] FirstMine =
         {
-            return new[]
-            {
-                "...Hah. A worthy reality after all.",
-                "I will find a stronger one, temper myself against it, and return for you."
-            };
-        }
+            new[] { "The rock down here is thin. I felt you bending fate through it from a realm away.",
+                    "I have crossed a thousand dead worlds to find a fight worth having.",
+                    "So. Show me why yours is still standing." },
+            new[] { "Do you feel the seam in the air? I came through it, following the scent of a reality that refuses to end.",
+                    "Every world I have walked has gone silent. Yours is still loud. That is why I am here." },
+            new[] { "I am not from your saga, farmer. I am from after it. After all of them.",
+                    "When your story ends, and it will, I will be the thing that walks out of the dark to watch how." },
+            new[] { "You have been carving through echoes down here. Dead men wearing old shapes.",
+                    "I am not an echo. I am the one who noticed you doing it." },
+            new[] { "A hundred versions of this cavern, and in only one of them are you strong enough to be worth killing.",
+                    "Lucky me. Lucky you. Let us find out which cavern this is." },
+            new[] { "I have a name, but it belonged to a world that no longer exists to remember it.",
+                    "Call me what the others called me before the end: the last thing they saw." },
+        };
+
+        // ---- first meeting, out in the overworld ------------------------------
+        private static readonly string[][] FirstOverworld =
+        {
+            new[] { "Your sky tore open for a reason, farmer. I stepped through the seam.",
+                    "I do not lurk in caves and wait to be found. I come to where you live.",
+                    "Put down the hoe. You will want both hands for this." },
+            new[] { "I have hunted champions on battlefields, in throne rooms, at the ends of worlds.",
+                    "And now, apparently, on a farm. The multiverse has a sense of humour." },
+            new[] { "I felt your power all the way up here, in the open air. You have grown careless with it.",
+                    "Power that loud is an invitation. I have accepted." },
+            new[] { "There is nowhere you are safe from me. Not the deep dark, not your fields, not your sleep.",
+                    "I wanted you to understand that clearly, before we begin." },
+            new[] { "You tend your little plot as though the walls between worlds were not paper.",
+                    "Allow me to introduce the outside. It has teeth." },
+        };
+
+        // ---- returning, in the mine -------------------------------------------
+        private static readonly string[][] ReturnMine =
+        {
+            new[] { "You put me down before. The multiverse is wide. I simply walked back in.",
+                    "This body is stronger than the last. I made certain of it." },
+            new[] { "The dark remembers you. So do I. I have thought of little else between worlds.",
+                    "Shall we continue where the dying left off?" },
+            new[] { "I found a reality where I had already beaten you. I studied it for a long, long time.",
+                    "Do not worry. I did not enjoy it half as much as I will enjoy the real thing." },
+            new[] { "Down here again. Good. The open sky flatters you; the dark tells the truth.",
+                    "And the truth is that I am closer every single time." },
+            new[] { "Between our fights I temper myself against the corpses of your other selves.",
+                    "You are all so similar at the end. I am learning your shape." },
+            new[] { "Every death teaches me one more thing you cannot do. My list of your limits grows.",
+                    "One day it will be complete. Perhaps today is that day." },
+            new[] { "I have walked through the wreckage of nine worlds since I last bled here.",
+                    "I brought all of it back with me. For you." },
+        };
+
+        // ---- returning, in the overworld --------------------------------------
+        private static readonly string[][] ReturnOverworld =
+        {
+            new[] { "Again. And this time I remember exactly how you move.",
+                    "One reality beat me. I have burned through several since. Let us see." },
+            new[] { "I could have waited in the mine. I chose your doorstep instead.",
+                    "I wanted you to know there is no season, no field, no peace I cannot reach." },
+            new[] { "You went back to your little chores, as if I were finished. As if anything is ever finished.",
+                    "Nothing ends. That is the first lesson of the multiverse. Let me teach you the rest." },
+            new[] { "I have crossed more worlds since we last spoke than you have days in your life.",
+                    "And in every one of them, I was thinking of this exact moment." },
+            new[] { "The wish you chase leaks its light into every reality at once. I follow it.",
+                    "It always leads back to you. You are the knot in the middle of everything. I mean to cut it." },
+            new[] { "Look at you, alive, planting seeds, as though our arrangement had lapsed.",
+                    "It has not lapsed. It will never lapse. Draw your ki." },
+        };
+
+        // ---- returning after many defeats: the rivalry has become something else
+        private static readonly string[][] DeepReturn =
+        {
+            new[] { "We have done this more times than either of us can name. I stopped counting the deaths, yours and mine both.",
+                    "You are the only constant I have left. In a strange way, I have come to need you." },
+            new[] { "Across a thousand endings, you are the one thing that keeps happening. My rival. My ritual.",
+                    "Do not die for good, farmer. I would not know what to do with a quiet multiverse." },
+            new[] { "I have forgotten the name of the world I was born in. I have not forgotten one of our fights.",
+                    "You are all the history I have left." },
+            new[] { "I no longer come for the wish, or the power, or the ending.",
+                    "I come for you. That should frighten you more than any of it does." },
+            new[] { "Somewhere I have a version of this where we simply talk. I never stay in it long.",
+                    "This is the only conversation I know how to finish. Again, then." },
+        };
+
+        // ---- on defeat --------------------------------------------------------
+        private static readonly string[][] DefeatPool =
+        {
+            new[] { "...Hah. A worthy reality after all.",
+                    "I will find a stronger one, temper myself against it, and return for you." },
+            new[] { "Not this shape, then. There are always more shapes.",
+                    "Rest, farmer. I will be back before you have forgotten my face." },
+            new[] { "You win the moment. You will not win the war. There is no war long enough.",
+                    "I have forever. You have a lifetime. Do the arithmetic." },
+            new[] { "Good. GOOD. If you had fallen easily I would have had to find someone else.",
+                    "And I do not want anyone else. Until the next seam." },
+            new[] { "The dark takes me back. It always takes me back.",
+                    "And the seam always reopens. Count on it. I do." },
+            new[] { "You are improving faster than I am. That is new. That is... interesting.",
+                    "I will have to try something drastic. Look forward to it." },
+            new[] { "One more world falls quiet behind me, and still you stand.",
+                    "You are becoming the last loud thing in all creation. I will be back to hear it." },
+        };
 
         // -------------------------------------------------------------- drawing
 
