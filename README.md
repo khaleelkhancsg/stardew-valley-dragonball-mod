@@ -20,7 +20,7 @@ Saiyan Transformations turns the Stardew Valley mine into a Dragon Ball power-fa
 - **A recurring end-game invader** that hunts you in the deep mine *and* the overworld, escalating every time it is beaten.
 - **Rival invasions, senzu beans, a power-level readout, a Zenkai comeback mechanic, a mastery system, and a hand-drawn ki gauge.**
 
-Everything is exposed through a config file (GMCM-compatible settings) so difficulty, unlock depths, drain rates and drop rates are all tunable.
+Everything is tunable — difficulty, unlock depths, drain rates, drop rates, keybinds and toggles — through `config.json`, or through an in-game options page if [Generic Mod Config Menu](https://www.nexusmods.com/stardewvalley/mods/5098) is installed (an optional dependency).
 
 ---
 
@@ -46,12 +46,18 @@ Fire (R) and cycle (Shift+R) between unlocked techniques, each using vanilla swo
 - **Destructo Disk** — charge-and-throw spinning blade that cuts weeds, single wood and mine ore nodes (and drops their contents).
 - **Solar Flare**, **Spirit Bomb**, **Instant Transmission**, **Kaioken** — unlocked by defeating their boss.
 
+### Dash & block
+- **Dash** — a ki-cost blink with brief invincibility, thrown in your **actual movement direction (diagonals included)** and falling back to your facing when standing still; refuses to cut solid corners.
+- **Block** — hold to soak most incoming damage at the cost of ki per second and per hit, with a guard bubble while it's up. Together these give the boss telegraphs real counterplay — dash the beams, guard the ki blasts.
+
 ### Bosses & the 300-floor ladder
 - 32 bosses spaced on a clean 10-floor grid from floor 10 to 300, ordered so **deeper = stronger** and themed across the DBZ sagas (Saibamen → Frieza → Cell → Buu → Broly → God of Destruction).
 - Each boss is a reskinned vanilla monster with its **own sprite sheet**, custom health/damage budget, aura, and a health bar.
+- **Special moves** — marquee bosses fire **aimed ki-blast spreads, telegraphed beams, blink-strikes, self-healing, and death blasts** on top of their vanilla melee, all through a bespoke ability runner (no Harmony patching).
+- **Phases** — major bosses power up as their health falls (harder hits, more speed) and can gain a brand-new move at the final phase.
 - **No boss can be skipped** — a living boss seals the way down until it falls.
 - **Respawn on cooldown** (~40 in-game days) so fights can be repeated without being farmed.
-- **Rematches escalate**: every defeat permanently buffs that boss's health, damage and resilience, shown as a `×N` tier on its health bar.
+- **Rematches escalate**: every defeat permanently buffs that boss's health, damage, resilience — and, for signature bosses, move speed — shown as a `×N` tier on its health bar.
 - **Difficulty-scaled drops**: gold, senzu and depth-appropriate materials (geodes → gold bars → iridium → diamonds → prismatic shards), scaling with floor and rematch count.
 - **Full dialogue** — every boss has distinct lines on first meeting, on defeat, on the 2nd and 3rd rematch, and a repeatable signature line thereafter, all wrapped in original lore about why the fallen are drawn to the depths.
 
@@ -147,7 +153,7 @@ The AI accelerated implementation; the vision, judgement, art and design are min
 2. Download this repo and drop the built `SaiyanTransformations` folder into `Stardew Valley/Mods/`.
 3. Launch through SMAPI. Descend the mine to floor 10 and press **F** to transform.
 
-Default keys (all rebindable in `config.json`): **F** transform · **Shift+F** power down · **R** fire technique · **Shift+R** switch technique.
+Default keys (all rebindable in `config.json` or the GMCM menu): **F** transform · **Shift+F** power down · **R** fire technique · **Shift+R** switch technique · **Q** dash · **C** block (hold).
 
 ## Build (developers)
 
