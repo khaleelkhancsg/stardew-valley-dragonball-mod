@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
+using StardewModdingAPI.Utilities;
 using StardewValley;
 using StardewValley.Buffs;
 using StardewValley.GameData;
@@ -76,6 +77,10 @@ namespace SaiyanTransformations
         private bool senzuPending;
         private int kaiokenTicks;
         private float kaiokenHealthCarry;
+        private int dashCooldownTicks;
+        private int dashFlashTicks;
+        private bool blocking;
+        private int blockFlashTicks;
 
         internal Transformation CurrentForm =>
             this.formIndex >= 0 && this.formIndex < Transformation.All.Length
@@ -131,6 +136,66 @@ namespace SaiyanTransformations
             this.TechniqueIconTexture =
                 this.Helper.ModContent.Load<Texture2D>("assets/technique_icons.png");
             this.KiBarTexture = this.Helper.ModContent.Load<Texture2D>("assets/kibar.png");
+
+            this.SetupConfigMenu();
+        }
+
+        /// <summary>Register an in-game options page with Generic Mod Config Menu, if present.
+        /// GMCM is optional; without it the mod is configured through config.json as before.</summary>
+        private void SetupConfigMenu()
+        {
+            var gmcm = this.Helper.ModRegistry
+                .GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+            if (gmcm == null)
+                return;
+
+            IManifest m = this.ModManifest;
+            gmcm.Register(m, () => this.Config = new ModConfig(),
+                          () => this.Helper.WriteConfig(this.Config));
+
+            gmcm.AddSectionTitle(m, () => "Controls");
+            gmcm.AddKeybindList(m, () => this.Config.TransformKey, v => this.Config.TransformKey = v, () => "Transform / ascend");
+            gmcm.AddKeybindList(m, () => this.Config.PowerDownKey, v => this.Config.PowerDownKey = v, () => "Power down");
+            gmcm.AddKeybindList(m, () => this.Config.KamehamehaKey, v => this.Config.KamehamehaKey = v, () => "Fire technique");
+            gmcm.AddKeybindList(m, () => this.Config.SwitchTechniqueKey, v => this.Config.SwitchTechniqueKey = v, () => "Switch technique");
+            gmcm.AddKeybindList(m, () => this.Config.DashKey, v => this.Config.DashKey = v, () => "Dash");
+            gmcm.AddKeybindList(m, () => this.Config.BlockKey, v => this.Config.BlockKey = v, () => "Block (hold)");
+
+            gmcm.AddSectionTitle(m, () => "Dash & Block");
+            gmcm.AddBoolOption(m, () => this.Config.EnableDash, v => this.Config.EnableDash = v, () => "Enable dash");
+            gmcm.AddNumberOption(m, () => this.Config.DashKiCost, v => this.Config.DashKiCost = v, () => "Dash ki cost", null, 0f, 100f, 1f);
+            gmcm.AddNumberOption(m, () => this.Config.DashTiles, v => this.Config.DashTiles = v, () => "Dash distance (tiles)", null, 1, 8, 1);
+            gmcm.AddNumberOption(m, () => this.Config.DashCooldownMs, v => this.Config.DashCooldownMs = v, () => "Dash cooldown (ms)", null, 0, 5000, 100);
+            gmcm.AddBoolOption(m, () => this.Config.EnableBlock, v => this.Config.EnableBlock = v, () => "Enable block");
+            gmcm.AddNumberOption(m, () => this.Config.BlockDamageReduction, v => this.Config.BlockDamageReduction = v, () => "Block damage reduction", null, 0f, 0.95f, 0.05f);
+            gmcm.AddNumberOption(m, () => this.Config.BlockKiPerSecond, v => this.Config.BlockKiPerSecond = v, () => "Block ki / second", null, 0f, 50f, 1f);
+
+            gmcm.AddSectionTitle(m, () => "Bosses");
+            gmcm.AddBoolOption(m, () => this.Config.EnableBosses, v => this.Config.EnableBosses = v, () => "Enable bosses");
+            gmcm.AddBoolOption(m, () => this.Config.GateBossFloors, v => this.Config.GateBossFloors = v, () => "Seal floors until boss falls");
+            gmcm.AddBoolOption(m, () => this.Config.EnableBossAbilities, v => this.Config.EnableBossAbilities = v, () => "Boss special moves");
+            gmcm.AddBoolOption(m, () => this.Config.EnableBossPhases, v => this.Config.EnableBossPhases = v, () => "Boss phases");
+            gmcm.AddBoolOption(m, () => this.Config.EnableBossSpeedScaling, v => this.Config.EnableBossSpeedScaling = v, () => "Boss speed scaling");
+            gmcm.AddNumberOption(m, () => this.Config.BossRespawnCooldownDays, v => this.Config.BossRespawnCooldownDays = v, () => "Boss respawn cooldown (days)", null, 0, 200, 5);
+            gmcm.AddNumberOption(m, () => this.Config.BossAbilityDamageScale, v => this.Config.BossAbilityDamageScale = v, () => "Boss ability damage x", null, 0f, 5f, 0.1f);
+
+            gmcm.AddSectionTitle(m, () => "Difficulty");
+            gmcm.AddNumberOption(m, () => this.Config.BossHealthScale, v => this.Config.BossHealthScale = v, () => "Boss health x", null, 0.25f, 5f, 0.25f);
+            gmcm.AddNumberOption(m, () => this.Config.BossDamageScale, v => this.Config.BossDamageScale = v, () => "Boss damage x", null, 0.25f, 5f, 0.25f);
+            gmcm.AddBoolOption(m, () => this.Config.DrainStaminaWhileTransformed, v => this.Config.DrainStaminaWhileTransformed = v, () => "Ki drains while transformed");
+            gmcm.AddNumberOption(m, () => this.Config.StaminaDrainScale, v => this.Config.StaminaDrainScale = v, () => "Ki drain x", null, 0f, 5f, 0.25f);
+
+            gmcm.AddSectionTitle(m, () => "Invasions");
+            gmcm.AddBoolOption(m, () => this.Config.EnableRivalInvasions, v => this.Config.EnableRivalInvasions = v, () => "Rival invasions");
+            gmcm.AddBoolOption(m, () => this.Config.EnableMultiversalInvader, v => this.Config.EnableMultiversalInvader = v, () => "Multiversal Invader");
+
+            gmcm.AddSectionTitle(m, () => "Visuals");
+            gmcm.AddBoolOption(m, () => this.Config.ShowAura, v => this.Config.ShowAura = v, () => "Show aura");
+            gmcm.AddBoolOption(m, () => this.Config.ShowLightning, v => this.Config.ShowLightning = v, () => "Show lightning");
+            gmcm.AddBoolOption(m, () => this.Config.CalmMasteredAura, v => this.Config.CalmMasteredAura = v, () => "Calm mastered aura");
+            gmcm.AddBoolOption(m, () => this.Config.ShowKiBar, v => this.Config.ShowKiBar = v, () => "Show ki bar");
+            gmcm.AddBoolOption(m, () => this.Config.ShowPowerLevel, v => this.Config.ShowPowerLevel = v, () => "Show power level");
+            gmcm.AddBoolOption(m, () => this.Config.ScreenFlash, v => this.Config.ScreenFlash = v, () => "Screen flash");
         }
 
         private void OnAssetRequested(object sender, AssetRequestedEventArgs e)
@@ -645,7 +710,12 @@ namespace SaiyanTransformations
             if (!Context.IsPlayerFree)
                 return;
 
-            if (this.Config.SwitchTechniqueKey.JustPressed())
+            if (this.Config.DashKey.JustPressed())
+            {
+                this.TryDash();
+                this.Helper.Input.SuppressActiveKeybinds(this.Config.DashKey);
+            }
+            else if (this.Config.SwitchTechniqueKey.JustPressed())
             {
                 this.Techniques.Cycle();
                 this.Helper.Input.SuppressActiveKeybinds(this.Config.SwitchTechniqueKey);
@@ -685,6 +755,13 @@ namespace SaiyanTransformations
                     this.dodgeTicks = 0;
             }
 
+            if (this.dashCooldownTicks > 0)
+                this.dashCooldownTicks--;
+            if (this.dashFlashTicks > 0 && ++this.dashFlashTicks > 10)
+                this.dashFlashTicks = 0;
+            if (this.blockFlashTicks > 0 && ++this.blockFlashTicks > 8)
+                this.blockFlashTicks = 0;
+
             if (!Context.IsWorldReady)
                 return;
 
@@ -709,6 +786,7 @@ namespace SaiyanTransformations
             this.CheckSenzu();
             this.UpdateKaioken();
             this.CheckNewUnlocks();
+            this.UpdateBlock();
             this.CheckDodge();
             this.UpdateAuraSound();
 
@@ -767,6 +845,22 @@ namespace SaiyanTransformations
                 this.untouchedTicks++;
             }
 
+            // a held guard soaks most of the hit, at the cost of ki
+            if (this.blocking && lost > 0)
+            {
+                float reduction = MathHelper.Clamp(this.Config.BlockDamageReduction, 0f, 0.95f);
+                int refund = (int)(lost * reduction);
+                if (refund > 0)
+                {
+                    player.health = Math.Min(player.maxHealth, health + refund);
+                    health = player.health;
+                    lost -= refund;
+                    this.Ki.Spend(this.Config.BlockKiPerHit);
+                    this.blockFlashTicks = 1;
+                    this.PlayCue("dodge", "crystal");
+                }
+            }
+
             if (lost > 0 && form != null && form.DodgeChance > 0f
                 && this.Ki.CanAfford(this.Config.UltraInstinctDodgeEnergyCost)
                 && Game1.random.NextDouble() < this.EffectiveDodgeChance(form))
@@ -783,6 +877,117 @@ namespace SaiyanTransformations
             }
 
             this.lastHealth = health;
+        }
+
+        /// <summary>A ki-cost dash: a short blink in the direction you are moving (diagonals
+        /// included) with brief invincibility, so the new boss telegraphs have real counterplay.</summary>
+        private void TryDash()
+        {
+            if (!this.Config.EnableDash || this.dashCooldownTicks > 0)
+                return;
+
+            Farmer p = Game1.player;
+            if (p == null || !Context.IsPlayerFree)
+                return;
+            if (this.Ki.IsExhausted || !this.Ki.CanAfford(this.Config.DashKiCost))
+            {
+                ModEntry.Notify("Not enough ki to dash.");
+                return;
+            }
+
+            Vector2 dir = this.DashDirection(p);
+            if (dir == Vector2.Zero)
+                return;
+
+            GameLocation loc = p.currentLocation;
+            int startX = (int)p.Tile.X;
+            int startY = (int)p.Tile.Y;
+            int stepX = Math.Sign(dir.X);
+            int stepY = Math.Sign(dir.Y);
+
+            Vector2 dest = p.Position;
+            int reached = 0;
+            for (int i = 1; i <= Math.Max(1, this.Config.DashTiles); i++)
+            {
+                int tx = startX + (stepX * i);
+                int ty = startY + (stepY * i);
+
+                // for a diagonal, refuse to cut through a solid corner
+                if (stepX != 0 && stepY != 0
+                    && (!IsPassable(loc, tx - stepX, ty) || !IsPassable(loc, tx, ty - stepY)))
+                    break;
+                if (!IsPassable(loc, tx, ty))
+                    break;
+
+                dest = new Vector2(tx * 64f, ty * 64f);
+                reached = i;
+            }
+
+            if (reached == 0)
+                return;
+
+            p.Position = dest;
+            this.Ki.Spend(this.Config.DashKiCost);
+            this.Ki.InterruptCharging();
+            p.temporarilyInvincible = true;
+            p.temporaryInvincibilityTimer = 0;
+            p.currentTemporaryInvincibilityDuration = Math.Max(100, this.Config.DashInvincibilityMs);
+            this.dashCooldownTicks = Math.Max(1, this.Config.DashCooldownMs * 60 / 1000);
+            this.dashFlashTicks = 1;
+            this.PlayCue("dodge", "wand");
+        }
+
+        /// <summary>The direction to dash: the keys actually held (so W+A blinks up-left),
+        /// falling back to the way the farmer faces when standing still.</summary>
+        private Vector2 DashDirection(Farmer p)
+        {
+            Vector2 d = Vector2.Zero;
+            foreach (int dir in p.movementDirections)
+            {
+                switch (dir)
+                {
+                    case 0: d.Y -= 1f; break;   // up
+                    case 1: d.X += 1f; break;   // right
+                    case 2: d.Y += 1f; break;   // down
+                    case 3: d.X -= 1f; break;   // left
+                }
+            }
+            if (d != Vector2.Zero)
+                return d;
+
+            switch (p.FacingDirection)
+            {
+                case 0: return new Vector2(0f, -1f);
+                case 1: return new Vector2(1f, 0f);
+                case 2: return new Vector2(0f, 1f);
+                default: return new Vector2(-1f, 0f);
+            }
+        }
+
+        private static bool IsPassable(GameLocation loc, int x, int y)
+        {
+            return loc != null
+                   && loc.isTilePassable(new xTile.Dimensions.Location(x, y), Game1.viewport);
+        }
+
+        /// <summary>Refresh the held-guard state each tick and bleed ki while it is up.</summary>
+        private void UpdateBlock()
+        {
+            bool held = this.Config.EnableBlock && Context.IsPlayerFree && !this.Ki.IsExhausted
+                        && this.KeyDown(this.Config.BlockKey) && this.Ki.Current > 0.5f;
+            if (held)
+            {
+                this.Ki.Drain(Math.Max(0f, this.Config.BlockKiPerSecond) / 60f);
+                if (this.Ki.Current <= 0f)
+                    held = false;
+            }
+            this.blocking = held;
+        }
+
+        private bool KeyDown(KeybindList keys)
+        {
+            SButtonState state = keys.GetState();
+            return state == SButtonState.Held || state == SButtonState.Pressed;
         }
 
         /// <summary>Mastered Ultra Instinct sharpens the longer you go untouched; every
@@ -886,7 +1091,8 @@ namespace SaiyanTransformations
             if (form == null && !this.Techniques.AnyActive && this.burstTicks <= 0
                 && this.dodgeTicks <= 0 && !bossVisible && !this.DragonBalls.RitualActive
                 && !this.Ki.IsCharging && !this.Progress.HasVisuals && !this.Rivals.Active
-                && !this.Invader.Active)
+                && !this.Invader.Active && !this.blocking && this.dashFlashTicks <= 0
+                && this.blockFlashTicks <= 0)
             {
                 return;
             }
@@ -916,6 +1122,7 @@ namespace SaiyanTransformations
                 }
                 if (this.dodgeTicks > 0)
                     this.Fx.DrawDodge(b, this.dodgeTicks, DodgeFlashLength);
+                this.DrawGuardAndDash(b);
                 if (form != null)
                 {
                     bool calm = this.FormIsCalm(form);
@@ -932,6 +1139,36 @@ namespace SaiyanTransformations
             finally
             {
                 this.Fx.EndGlow(b);
+            }
+        }
+
+        /// <summary>A blue guard bubble while blocking, and a quick flare on a dash.</summary>
+        private void DrawGuardAndDash(SpriteBatch b)
+        {
+            Vector2 anchor = this.Fx.PlayerAnchor();
+            Vector2 centre = new Vector2(anchor.X, anchor.Y - 32f);
+
+            if (this.blocking || this.blockFlashTicks > 0)
+            {
+                float pulse = 0.30f + (0.10f * (float)Math.Sin(this.AnimTicks * 0.2));
+                float alpha = this.blockFlashTicks > 0 ? 0.7f : pulse;
+                int frame = (this.AnimTicks / 4) % 4;
+                const float scale = 4.2f;
+                b.Draw(this.KameTexture,
+                       new Vector2(centre.X - (16 * scale), centre.Y - (16 * scale)),
+                       new Rectangle(frame * 32, 64, 32, 32), new Color(120, 200, 255) * alpha,
+                       0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+            }
+
+            if (this.dashFlashTicks > 0)
+            {
+                float t = this.dashFlashTicks / 10f;
+                float scale = 3f + (t * 4f);
+                int frame = Math.Min(3, (int)(t * 4f));
+                b.Draw(this.KameTexture,
+                       new Vector2(centre.X - (16 * scale), centre.Y - (16 * scale)),
+                       new Rectangle(frame * 32, 64, 32, 32), new Color(200, 235, 255) * (1f - t),
+                       0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
             }
         }
 
@@ -1021,6 +1258,10 @@ namespace SaiyanTransformations
             this.lastMineLevel = -1;
             this.lastFloorSealed = false;
             this.pendingGateBounce = -1;
+            this.blocking = false;
+            this.dashCooldownTicks = 0;
+            this.dashFlashTicks = 0;
+            this.blockFlashTicks = 0;
             this.lastHealth = -1;
             this.dodgeTicks = 0;
             this.kaiokenTicks = 0;

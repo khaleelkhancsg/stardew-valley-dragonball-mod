@@ -22,6 +22,29 @@ namespace SaiyanTransformations
         /// since SMAPI keybinds are not exclusive and Shift+R also satisfies plain R.</summary>
         public KeybindList SwitchTechniqueKey { get; set; } = KeybindList.Parse("LeftShift + R");
 
+        /// <summary>Ki-cost dash: a short blink with brief invincibility. Tap to fire.</summary>
+        public KeybindList DashKey { get; set; } = KeybindList.Parse("Q");
+
+        /// <summary>Ki-cost guard: hold to soak most incoming damage while ki lasts.</summary>
+        public KeybindList BlockKey { get; set; } = KeybindList.Parse("C");
+
+        // ---- dash & block ------------------------------------------------
+
+        public bool EnableDash { get; set; } = true;
+        public float DashKiCost { get; set; } = 10f;
+        public int DashTiles { get; set; } = 3;
+        public int DashCooldownMs { get; set; } = 1200;
+        public int DashInvincibilityMs { get; set; } = 450;
+
+        public bool EnableBlock { get; set; } = true;
+
+        /// <summary>Fraction of incoming damage a held block absorbs (0-0.95).</summary>
+        public float BlockDamageReduction { get; set; } = 0.7f;
+
+        /// <summary>Ki drained per second while holding block, plus a little per hit soaked.</summary>
+        public float BlockKiPerSecond { get; set; } = 8f;
+        public float BlockKiPerHit { get; set; } = 6f;
+
         // ---- unlocks -----------------------------------------------------
 
         /// <summary>Mine level that unlocks each form. Skull Cavern levels count as 121+.</summary>
@@ -145,6 +168,10 @@ namespace SaiyanTransformations
         /// <summary>Let marquee bosses use special moves (ki blasts, beams, blinks, healing,
         /// self-destruct) on top of their vanilla melee. Turn off for plain stat-block bosses.</summary>
         public bool EnableBossAbilities { get; set; } = true;
+
+        /// <summary>Let major bosses power up at low health — harder hits, more speed, and a
+        /// new move at the final phase. Turn off for flat single-phase fights.</summary>
+        public bool EnableBossPhases { get; set; } = true;
 
         /// <summary>Scales the damage of every boss special move. Their base damage already
         /// tracks depth and rematch tier; this is a blunt global dial on top.</summary>

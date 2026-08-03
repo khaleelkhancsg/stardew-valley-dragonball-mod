@@ -95,6 +95,14 @@ namespace SaiyanTransformations
         /// small integers, so keep this in the 1-3 range.</summary>
         public int SpeedBonus;
 
+        /// <summary>How many times this boss powers up as its health falls (0 = no phases).
+        /// Thresholds are spaced evenly, e.g. 2 phases fire at ~66% and ~33% health.</summary>
+        public int PhaseCount;
+
+        /// <summary>An ability the boss gains when it reaches its final phase - so a melee-only
+        /// boss can start throwing ki once it is cornered.</summary>
+        public BossAbility PhaseAbility = BossAbility.None;
+
         /// <summary>Only applies to Green Slimes, which are the one vanilla monster
         /// with a per-instance tint.</summary>
         public Color? SlimeTint;
@@ -130,7 +138,8 @@ namespace SaiyanTransformations
                 BonusTechniqueId = "InstantTransmission",
                 Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.15f, DamageMultiplier = 1.1f, Resilience = 3,
-                Scale = 1.5f, AuraColor = new Color(180, 120, 255)
+                Scale = 1.5f, AuraColor = new Color(180, 120, 255),
+                PhaseCount = 1, PhaseAbility = BossAbility.KiBlast
             },
             new BossDefinition
             {
@@ -148,7 +157,7 @@ namespace SaiyanTransformations
                 MineLevel = 90, Reward = BossReward.Form, FormIndex = 2,
                 Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.SquidKid, MonsterKind.SquidKid },
                 HealthMultiplier = 1.15f, DamageMultiplier = 1.1f, Resilience = 3,
-                Scale = 1.3f, AuraColor = new Color(255, 150, 60)
+                Scale = 1.3f, AuraColor = new Color(255, 150, 60), PhaseCount = 1
             },
             new BossDefinition
             {
@@ -166,7 +175,8 @@ namespace SaiyanTransformations
                 MineLevel = 140, Reward = BossReward.Form, FormIndex = 3,
                 Squad = new[] { MonsterKind.Serpent },
                 HealthMultiplier = 1.25f, DamageMultiplier = 1.15f, Resilience = 5,
-                Scale = 1.4f, AuraColor = new Color(255, 90, 190), Abilities = BossAbility.Beam
+                Scale = 1.4f, AuraColor = new Color(255, 90, 190), Abilities = BossAbility.Beam,
+                PhaseCount = 2, PhaseAbility = BossAbility.KiBlast
             },
             new BossDefinition
             {
@@ -186,7 +196,7 @@ namespace SaiyanTransformations
                 Squad = new[] { MonsterKind.Mummy },
                 HealthMultiplier = 1.3f, DamageMultiplier = 1.2f, Resilience = 6,
                 Scale = 1.6f, AuraColor = new Color(140, 240, 140),
-                Abilities = BossAbility.Beam | BossAbility.Regenerate
+                Abilities = BossAbility.Beam | BossAbility.Regenerate, PhaseCount = 2
             },
             new BossDefinition
             {
@@ -213,7 +223,8 @@ namespace SaiyanTransformations
                 MineLevel = 240, Reward = BossReward.Form, FormIndex = 5,
                 Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.5f, DamageMultiplier = 1.25f, Resilience = 8,
-                Scale = 2.0f, AuraColor = new Color(255, 130, 210)
+                Scale = 2.0f, AuraColor = new Color(255, 130, 210),
+                PhaseCount = 2, PhaseAbility = BossAbility.Teleport
             },
 
             // ---- skull cavern (mine level 120 + floor) ----------------------
@@ -333,7 +344,7 @@ namespace SaiyanTransformations
                 Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.05f, DamageMultiplier = 1.05f, Resilience = 3,
                 Scale = 1.45f, AuraColor = new Color(150, 230, 220), SpriteSheet = "cooler",
-                SpeedBonus = 1
+                SpeedBonus = 1, PhaseCount = 1, PhaseAbility = BossAbility.Beam
             },
             new BossDefinition
             {
@@ -384,7 +395,7 @@ namespace SaiyanTransformations
                 Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.7f, DamageMultiplier = 1.4f, Resilience = 12,
                 Scale = 2.2f, AuraColor = new Color(150, 240, 120), SpriteSheet = "broly",
-                SpeedBonus = 1
+                SpeedBonus = 1, PhaseCount = 2, PhaseAbility = BossAbility.KiBlast
             },
             new BossDefinition
             {
@@ -395,7 +406,7 @@ namespace SaiyanTransformations
                                 MonsterKind.Mummy, MonsterKind.Mummy },
                 HealthMultiplier = 1.7f, DamageMultiplier = 1.4f, Resilience = 12,
                 Scale = 1.7f, AuraColor = new Color(255, 150, 210), SpriteSheet = "kidbuu",
-                Abilities = BossAbility.Regenerate, SpeedBonus = 2
+                Abilities = BossAbility.Regenerate, SpeedBonus = 2, PhaseCount = 1
             },
             new BossDefinition
             {
@@ -405,7 +416,8 @@ namespace SaiyanTransformations
                 Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.2f, DamageMultiplier = 1.15f, Resilience = 5,
                 Scale = 1.6f, AuraColor = new Color(210, 150, 235), SpriteSheet = "friezalord",
-                Abilities = BossAbility.KiBlast, SpeedBonus = 1
+                Abilities = BossAbility.KiBlast, SpeedBonus = 1,
+                PhaseCount = 2, PhaseAbility = BossAbility.Beam
             },
             new BossDefinition
             {
@@ -416,7 +428,8 @@ namespace SaiyanTransformations
                                 MonsterKind.ShadowBrute, MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.85f, DamageMultiplier = 1.5f, Resilience = 14,
                 Scale = 2.4f, AuraColor = new Color(190, 120, 255), SpriteSheet = "destroyer",
-                Abilities = BossAbility.Teleport | BossAbility.KiBlast, SpeedBonus = 3
+                Abilities = BossAbility.Teleport | BossAbility.KiBlast, SpeedBonus = 3,
+                PhaseCount = 2, PhaseAbility = BossAbility.Beam
             }
         };
 
@@ -494,6 +507,7 @@ namespace SaiyanTransformations
         public const string BossKey = "khaleelkhan.SaiyanTransformations/boss";
         public const string SecondWindKey = "khaleelkhan.SaiyanTransformations/secondwind";
         public const string InvaderKey = "khaleelkhan.SaiyanTransformations/invader";
+        public const string PhaseKey = "khaleelkhan.SaiyanTransformations/phase";
 
         /// <summary>Custom sheet per monster type, sized to match vanilla exactly so the
         /// game's frame-index maths lands on the right art. Serpents keep vanilla art.</summary>
@@ -1002,6 +1016,8 @@ namespace SaiyanTransformations
                     && id == def.Id)
                 {
                     this.CheckSecondWind(monster);
+                    if (Owner.Config.EnableBossPhases)
+                        this.CheckPhase(monster, def);
                     if (Owner.Config.EnableBossAbilities)
                         this.abilities.TickMonster(monster, def);
                     alive++;
@@ -1049,6 +1065,43 @@ namespace SaiyanTransformations
             if (Owner.Config.ScreenFlash)
                 Game1.flashAlpha = 0.5f;
             ModEntry.Notify("It refuses to fall.");
+        }
+
+        /// <summary>Major bosses power up as their health falls. Each phase hits harder and
+        /// moves faster, and the last phase can hand the boss a brand-new move.</summary>
+        private void CheckPhase(Monster monster, BossDefinition def)
+        {
+            if (def.PhaseCount <= 0 || monster.MaxHealth <= 0)
+                return;
+
+            int done = 0;
+            if (monster.modData.TryGetValue(PhaseKey, out string s))
+                int.TryParse(s, out done);
+            if (done >= def.PhaseCount)
+                return;
+
+            // thresholds spaced evenly: 2 phases -> 66% and 33%
+            float fraction = (float)monster.Health / monster.MaxHealth;
+            float threshold = 1f - ((done + 1f) / (def.PhaseCount + 1f));
+            if (fraction > threshold)
+                return;
+
+            done++;
+            monster.modData[PhaseKey] = done.ToString();
+            monster.DamageToFarmer = (int)(monster.DamageToFarmer * 1.3f);
+            monster.speed += 1;
+            monster.resilience.Value += 2;
+
+            // the final phase can grant a new ability the boss did not start with
+            if (done >= def.PhaseCount && def.PhaseAbility != BossAbility.None)
+                monster.modData[BossAbilityRunner.PhaseAbilityKey] = ((int)def.PhaseAbility).ToString();
+
+            Owner.PlayCue("boss_roar", "shadowpeep");
+            if (Owner.Config.ScreenFlash)
+                Game1.flashAlpha = 0.6f;
+            ModEntry.Notify(done >= def.PhaseCount
+                ? $"{def.DisplayName} stops holding back!"
+                : $"{def.DisplayName}'s power surges!");
         }
 
         /// <summary>Spawns the guardian that gates a late wish. Tagged separately from the

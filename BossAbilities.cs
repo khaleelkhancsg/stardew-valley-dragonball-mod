@@ -22,6 +22,9 @@ namespace SaiyanTransformations
         private const int BoomTelegraph = 8;
         private const int BoomTotal = 22;
 
+        /// <summary>modData key a boss carries once a phase grants it an extra ability.</summary>
+        public const string PhaseAbilityKey = "khaleelkhan.SaiyanTransformations/phaseability";
+
         private enum Kind { Orb, Beam, Boom }
 
         private sealed class Hazard
@@ -107,7 +110,16 @@ namespace SaiyanTransformations
         /// <summary>Called for each live boss monster every tick.</summary>
         public void TickMonster(Monster monster, BossDefinition def)
         {
-            if (def.Abilities == BossAbility.None)
+            // effective abilities = the boss's own plus anything a phase has granted it
+            BossAbility abilities = def.Abilities;
+            if (monster.modData.TryGetValue(PhaseAbilityKey, out string pa)
+                && int.TryParse(pa, out int extra))
+            {
+                abilities |= (BossAbility)extra;
+            }
+
+            bool selfDestruct = def.Abilities.HasFlag(BossAbility.SelfDestruct);
+            if (abilities == BossAbility.None && !selfDestruct)
                 return;
 
             if (!this.states.TryGetValue(monster, out MState st))
@@ -130,24 +142,24 @@ namespace SaiyanTransformations
 
             Vector2 target = Centre(Game1.player);
 
-            if (def.Abilities.HasFlag(BossAbility.Regenerate))
+            if (abilities.HasFlag(BossAbility.Regenerate))
                 this.Regenerate(monster, st);
 
-            if (def.Abilities.HasFlag(BossAbility.KiBlast) && --st.KiCd <= 0)
+            if (abilities.HasFlag(BossAbility.KiBlast) && --st.KiCd <= 0)
             {
                 st.KiCd = KiBlastCooldown;
                 if (!this.AnyActive(Kind.Orb))           // one volley in flight at a time
                     this.FireKiBlast(def, st.LastCentre, target);
             }
 
-            if (def.Abilities.HasFlag(BossAbility.Beam) && --st.BeamCd <= 0)
+            if (abilities.HasFlag(BossAbility.Beam) && --st.BeamCd <= 0)
             {
                 st.BeamCd = BeamCooldown;
                 if (!this.AnyActive(Kind.Beam))          // one beam at a time
                     this.FireBeam(def, st.LastCentre, target);
             }
 
-            if (def.Abilities.HasFlag(BossAbility.Teleport) && --st.TeleportCd <= 0)
+            if (abilities.HasFlag(BossAbility.Teleport) && --st.TeleportCd <= 0)
             {
                 st.TeleportCd = TeleportCooldown;
                 this.Blink(monster);
