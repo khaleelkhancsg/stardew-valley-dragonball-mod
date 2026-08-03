@@ -142,6 +142,26 @@ namespace SaiyanTransformations
         /// art. Only the boss instances are affected; ordinary monsters are untouched.</summary>
         public bool CustomBossSprites { get; set; } = true;
 
+        /// <summary>Let marquee bosses use special moves (ki blasts, beams, blinks, healing,
+        /// self-destruct) on top of their vanilla melee. Turn off for plain stat-block bosses.</summary>
+        public bool EnableBossAbilities { get; set; } = true;
+
+        /// <summary>Scales the damage of every boss special move. Their base damage already
+        /// tracks depth and rematch tier; this is a blunt global dial on top.</summary>
+        public float BossAbilityDamageScale { get; set; } = 1.0f;
+
+        /// <summary>Percent of max health a regenerating boss heals per second.</summary>
+        public float BossRegenPercentPerSecond { get; set; } = 2.0f;
+
+        /// <summary>Let bosses move faster than their base monster type — a per-boss bonus plus
+        /// a small climb per rematch tier, so signature bosses feel quick and deep repeat
+        /// fights are harder to run from. Turn off to keep vanilla per-type speeds.</summary>
+        public bool EnableBossSpeedScaling { get; set; } = true;
+
+        /// <summary>Most extra move speed a boss can gain from rematches, on top of its own
+        /// per-boss bonus. Vanilla monster speeds are small integers, so this stays low.</summary>
+        public int BossMaxRematchSpeedBonus { get; set; } = 3;
+
         /// <summary>Require the guardian to be beaten before its form unlocks.
         /// With this off, reaching the mine level is enough (the original behaviour).</summary>
         public bool RequireBossKills { get; set; } = true;

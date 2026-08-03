@@ -25,6 +25,18 @@ namespace SaiyanTransformations
 
     internal enum BossReward { Form, Technique, DragonBall, Supplies, PowerCache }
 
+    /// <summary>Special moves a boss can use on top of its inherited vanilla melee AI.</summary>
+    [Flags]
+    internal enum BossAbility
+    {
+        None = 0,
+        KiBlast = 1,       // aimed orbs flung at the player
+        Beam = 2,          // telegraphed line that scorches a corridor
+        Teleport = 4,      // blinks in beside the player
+        Regenerate = 8,    // heals itself over time
+        SelfDestruct = 16  // detonates where it dies
+    }
+
     internal sealed class BossDefinition
     {
         public string Id;
@@ -76,6 +88,13 @@ namespace SaiyanTransformations
         /// boss can look unique. The sheet must match the leader monster kind's frame size.</summary>
         public string SpriteSheet;
 
+        /// <summary>Special moves this boss uses in addition to its vanilla melee AI.</summary>
+        public BossAbility Abilities = BossAbility.None;
+
+        /// <summary>Extra move speed over the base monster type. Vanilla monster speeds are
+        /// small integers, so keep this in the 1-3 range.</summary>
+        public int SpeedBonus;
+
         /// <summary>Only applies to Green Slimes, which are the one vanilla monster
         /// with a per-instance tint.</summary>
         public Color? SlimeTint;
@@ -92,7 +111,7 @@ namespace SaiyanTransformations
                                 MonsterKind.GreenSlime, MonsterKind.GreenSlime },
                 HealthMultiplier = 1.0f, DamageMultiplier = 1.0f, Resilience = 1,
                 Scale = 1.15f, AuraColor = new Color(120, 230, 90),
-                SlimeTint = new Color(96, 200, 72)
+                SlimeTint = new Color(96, 200, 72), Abilities = BossAbility.SelfDestruct
             },
             new BossDefinition
             {
@@ -147,7 +166,7 @@ namespace SaiyanTransformations
                 MineLevel = 140, Reward = BossReward.Form, FormIndex = 3,
                 Squad = new[] { MonsterKind.Serpent },
                 HealthMultiplier = 1.25f, DamageMultiplier = 1.15f, Resilience = 5,
-                Scale = 1.4f, AuraColor = new Color(255, 90, 190)
+                Scale = 1.4f, AuraColor = new Color(255, 90, 190), Abilities = BossAbility.Beam
             },
             new BossDefinition
             {
@@ -166,7 +185,8 @@ namespace SaiyanTransformations
                 MineLevel = 190, Reward = BossReward.Form, FormIndex = 4,
                 Squad = new[] { MonsterKind.Mummy },
                 HealthMultiplier = 1.3f, DamageMultiplier = 1.2f, Resilience = 6,
-                Scale = 1.6f, AuraColor = new Color(140, 240, 140)
+                Scale = 1.6f, AuraColor = new Color(140, 240, 140),
+                Abilities = BossAbility.Beam | BossAbility.Regenerate
             },
             new BossDefinition
             {
@@ -232,7 +252,8 @@ namespace SaiyanTransformations
                 MineLevel = 265, Reward = BossReward.Supplies,
                 Squad = new[] { MonsterKind.Serpent, MonsterKind.Serpent, MonsterKind.Serpent },
                 HealthMultiplier = 1.35f, DamageMultiplier = 1.25f, Resilience = 9,
-                Scale = 1.5f, AuraColor = new Color(220, 245, 255)
+                Scale = 1.5f, AuraColor = new Color(220, 245, 255),
+                Abilities = BossAbility.Teleport, SpeedBonus = 3
             },
             new BossDefinition
             {
@@ -311,7 +332,8 @@ namespace SaiyanTransformations
                 MineLevel = 120, Reward = BossReward.PowerCache, CacheKi = 34f, CacheAttack = 0.05f,
                 Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.05f, DamageMultiplier = 1.05f, Resilience = 3,
-                Scale = 1.45f, AuraColor = new Color(150, 230, 220), SpriteSheet = "cooler"
+                Scale = 1.45f, AuraColor = new Color(150, 230, 220), SpriteSheet = "cooler",
+                SpeedBonus = 1
             },
             new BossDefinition
             {
@@ -339,7 +361,8 @@ namespace SaiyanTransformations
                 MineLevel = 230, Reward = BossReward.Supplies, SupplySenzu = 3, SupplyGold = 22000,
                 Squad = new[] { MonsterKind.Mummy, MonsterKind.Mummy },
                 HealthMultiplier = 1.3f, DamageMultiplier = 1.2f, Resilience = 7,
-                Scale = 1.6f, AuraColor = new Color(255, 130, 210), SpriteSheet = "superbuu"
+                Scale = 1.6f, AuraColor = new Color(255, 130, 210), SpriteSheet = "superbuu",
+                Abilities = BossAbility.Regenerate
             },
 
             // ---- deep Skull Cavern challenges (endgame, well past the last guardian) ---
@@ -360,7 +383,8 @@ namespace SaiyanTransformations
                 MineLevel = 280, Reward = BossReward.PowerCache, CacheKi = 60f, CacheAttack = 0.10f,
                 Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.7f, DamageMultiplier = 1.4f, Resilience = 12,
-                Scale = 2.2f, AuraColor = new Color(150, 240, 120), SpriteSheet = "broly"
+                Scale = 2.2f, AuraColor = new Color(150, 240, 120), SpriteSheet = "broly",
+                SpeedBonus = 1
             },
             new BossDefinition
             {
@@ -370,7 +394,8 @@ namespace SaiyanTransformations
                 Squad = new[] { MonsterKind.Mummy, MonsterKind.Mummy,
                                 MonsterKind.Mummy, MonsterKind.Mummy },
                 HealthMultiplier = 1.7f, DamageMultiplier = 1.4f, Resilience = 12,
-                Scale = 1.7f, AuraColor = new Color(255, 150, 210), SpriteSheet = "kidbuu"
+                Scale = 1.7f, AuraColor = new Color(255, 150, 210), SpriteSheet = "kidbuu",
+                Abilities = BossAbility.Regenerate, SpeedBonus = 2
             },
             new BossDefinition
             {
@@ -379,7 +404,8 @@ namespace SaiyanTransformations
                 MineLevel = 100, Reward = BossReward.PowerCache, CacheKi = 30f, CacheAttack = 0.045f,
                 Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.2f, DamageMultiplier = 1.15f, Resilience = 5,
-                Scale = 1.6f, AuraColor = new Color(210, 150, 235), SpriteSheet = "friezalord"
+                Scale = 1.6f, AuraColor = new Color(210, 150, 235), SpriteSheet = "friezalord",
+                Abilities = BossAbility.KiBlast, SpeedBonus = 1
             },
             new BossDefinition
             {
@@ -389,7 +415,8 @@ namespace SaiyanTransformations
                 Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute,
                                 MonsterKind.ShadowBrute, MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.85f, DamageMultiplier = 1.5f, Resilience = 14,
-                Scale = 2.4f, AuraColor = new Color(190, 120, 255), SpriteSheet = "destroyer"
+                Scale = 2.4f, AuraColor = new Color(190, 120, 255), SpriteSheet = "destroyer",
+                Abilities = BossAbility.Teleport | BossAbility.KiBlast, SpeedBonus = 3
             }
         };
 
@@ -501,10 +528,14 @@ namespace SaiyanTransformations
         /// or a kill does not try to open a dialogue mid-transition.</summary>
         private string[] pendingDialogue;
 
+        /// <summary>Drives the special moves marquee bosses use on top of their melee.</summary>
+        private readonly BossAbilityRunner abilities;
+
         public BossManager(ModEntry owner, FxRenderer fx)
         {
             this.Owner = owner;
             this.Fx = fx;
+            this.abilities = new BossAbilityRunner(owner, this, fx);
         }
 
         public BossDefinition Active => this.active;
@@ -533,6 +564,7 @@ namespace SaiyanTransformations
             this.introTicks = 0;
             this.pendingDialogue = null;
             this.activeHealth = this.activeMaxHealth = this.activeAlive = 0;
+            this.abilities?.Reset();
         }
 
         public bool IsDefeated(BossDefinition def)
@@ -787,6 +819,14 @@ namespace SaiyanTransformations
             monster.DamageToFarmer = this.EncounterDamage(def);
             monster.resilience.Value += def.Resilience + (3 * cycle) + (2 * this.DefeatCountOf(def));
 
+            // faster than their base type: a per-boss bonus plus a slow climb per rematch
+            if (Owner.Config.EnableBossSpeedScaling)
+            {
+                int rematchSpeed = Math.Min(Math.Max(0, Owner.Config.BossMaxRematchSpeedBonus),
+                                            this.DefeatCountOf(def) / 2);
+                monster.speed += def.SpeedBonus + rematchSpeed;
+            }
+
             // hunt the player across the whole floor instead of idling
             monster.moveTowardPlayerThreshold.Value = 999;
 
@@ -936,6 +976,9 @@ namespace SaiyanTransformations
 
             this.ShowPendingDialogue();
 
+            if (Owner.Config.EnableBossAbilities)
+                this.abilities.Update();
+
             if (!(Game1.currentLocation is MineShaft shaft))
             {
                 this.active = null;
@@ -959,11 +1002,16 @@ namespace SaiyanTransformations
                     && id == def.Id)
                 {
                     this.CheckSecondWind(monster);
+                    if (Owner.Config.EnableBossAbilities)
+                        this.abilities.TickMonster(monster, def);
                     alive++;
                     health += Math.Max(0, monster.Health);
                     maxHealth += Math.Max(1, monster.MaxHealth);
                 }
             }
+
+            if (Owner.Config.EnableBossAbilities)
+                this.abilities.SweepDead();
 
             if (alive > 0)
             {
@@ -1329,7 +1377,13 @@ namespace SaiyanTransformations
 
         public void DrawWorld(SpriteBatch b)
         {
-            if (!Owner.Config.ShowAura || !(Game1.currentLocation is MineShaft shaft))
+            if (!(Game1.currentLocation is MineShaft shaft))
+                return;
+
+            if (Owner.Config.EnableBossAbilities)
+                this.abilities.Draw(b);
+
+            if (!Owner.Config.ShowAura)
                 return;
 
             foreach (NPC npc in shaft.characters)
