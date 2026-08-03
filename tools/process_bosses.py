@@ -8,8 +8,11 @@ os.makedirs(TMP, exist_ok=True)
 
 # file (exact basename, no ext) -> (sheet, kind, frame_w, frame_h)
 MAP = {
- "saibaman": ("saibamen","GreenSlime",24,34),
- "cell junior": ("celljr","GreenSlime",22,32),
+ # Saibamen / Cell Juniors are built on ShadowBrute, not GreenSlime: GreenSlime
+ # overrides SpriteWidth/Height to its own vanilla size and ignores our custom
+ # frame dims, which made adjacent frames bleed into each other in-game.
+ "saibaman": ("saibamen","ShadowBrute",24,34),
+ "cell junior": ("celljr","ShadowBrute",22,32),
  "frieza (first form)": ("friezafirst","SquidKid",24,36),
  "nappa": ("nappa","ShadowBrute",30,46),
  "saiyan elite": ("eliteboss","ShadowBrute",28,44),

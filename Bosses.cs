@@ -122,10 +122,10 @@ namespace SaiyanTransformations
                 Id = "Saibamen", DisplayName = "Saibaman Squad",
                 Subtitle = "Sprouted from the cavern floor",
                 MineLevel = 10, Reward = BossReward.Form, FormIndex = 0,
-                Squad = new[] { MonsterKind.GreenSlime, MonsterKind.GreenSlime,
-                                MonsterKind.GreenSlime, MonsterKind.GreenSlime },
+                Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute,
+                                MonsterKind.ShadowBrute, MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.0f, DamageMultiplier = 1.0f, Resilience = 1,
-                Scale = 1.15f, AuraColor = new Color(120, 230, 90),
+                Scale = 0.90f, AuraColor = new Color(120, 230, 90),
                 SlimeTint = new Color(96, 200, 72), Abilities = BossAbility.SelfDestruct,
                 SpriteSheet = "saibamen"
             },
@@ -136,7 +136,7 @@ namespace SaiyanTransformations
                 MineLevel = 20, Reward = BossReward.Technique, TechniqueId = "DestructoDisk",
                 Squad = new[] { MonsterKind.SquidKid },
                 HealthMultiplier = 0.95f, DamageMultiplier = 0.95f, Resilience = 2,
-                Scale = 0.85f, AuraColor = new Color(140, 210, 130),
+                Scale = 0.70f, AuraColor = new Color(140, 210, 130),
                 Abilities = BossAbility.Teleport | BossAbility.Paralyze, SpriteSheet = "guldo"
             },
             new BossDefinition
@@ -146,7 +146,7 @@ namespace SaiyanTransformations
                 MineLevel = 30, Reward = BossReward.PowerCache, CacheKi = 20f, CacheAttack = 0.03f,
                 Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.05f, DamageMultiplier = 1.05f, Resilience = 2,
-                Scale = 1.55f, AuraColor = new Color(230, 210, 130), SpriteSheet = "nappa",
+                Scale = 0.95f, AuraColor = new Color(230, 210, 130), SpriteSheet = "nappa",
                 Abilities = BossAbility.Shockwave
             },
             new BossDefinition
@@ -156,7 +156,7 @@ namespace SaiyanTransformations
                 MineLevel = 40, Reward = BossReward.Supplies, SupplySenzu = 2, SupplyGold = 8000,
                 Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.05f, DamageMultiplier = 1.05f, Resilience = 3,
-                Scale = 1.05f, AuraColor = new Color(255, 110, 90),
+                Scale = 0.70f, AuraColor = new Color(255, 110, 90),
                 Abilities = BossAbility.KiBlast, SpriteSheet = "jeice"
             },
             new BossDefinition
@@ -167,7 +167,7 @@ namespace SaiyanTransformations
                 BonusTechniqueId = "InstantTransmission",
                 Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.15f, DamageMultiplier = 1.1f, Resilience = 3,
-                Scale = 1.5f, AuraColor = new Color(180, 120, 255),
+                Scale = 0.95f, AuraColor = new Color(180, 120, 255),
                 PhaseCount = 1, PhaseAbility = BossAbility.KiBlast, SpriteSheet = "eliteboss"
             },
             new BossDefinition
@@ -177,7 +177,7 @@ namespace SaiyanTransformations
                 MineLevel = 60, Reward = BossReward.PowerCache, CacheKi = 26f, CacheAttack = 0.04f,
                 Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.1f, DamageMultiplier = 1.05f, Resilience = 3,
-                Scale = 1.55f, AuraColor = new Color(120, 180, 255), SpeedBonus = 2,
+                Scale = 0.90f, AuraColor = new Color(120, 180, 255), SpeedBonus = 2,
                 Abilities = BossAbility.Rush, SpriteSheet = "burter"
             },
             new BossDefinition
@@ -188,7 +188,7 @@ namespace SaiyanTransformations
                 Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute,
                                 MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.1f, DamageMultiplier = 1.05f, Resilience = 3,
-                Scale = 1.3f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
+                Scale = 0.88f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
             },
             new BossDefinition
             {
@@ -197,7 +197,7 @@ namespace SaiyanTransformations
                 MineLevel = 80, Reward = BossReward.PowerCache, CacheKi = 28f, CacheAttack = 0.04f,
                 Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.1f, DamageMultiplier = 1.1f, Resilience = 3,
-                Scale = 1.55f, AuraColor = new Color(255, 140, 90), SpriteSheet = "recoome",
+                Scale = 1.00f, AuraColor = new Color(255, 140, 90), SpriteSheet = "recoome",
                 Abilities = BossAbility.Rush
             },
             new BossDefinition
@@ -207,7 +207,7 @@ namespace SaiyanTransformations
                 MineLevel = 90, Reward = BossReward.Form, FormIndex = 2,
                 Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.2f, DamageMultiplier = 1.15f, Resilience = 4,
-                Scale = 1.55f, AuraColor = new Color(180, 120, 255),
+                Scale = 0.95f, AuraColor = new Color(180, 120, 255),
                 PhaseCount = 1, PhaseAbility = BossAbility.KiBlast, SpriteSheet = "captainginyu"
             },
 
@@ -219,7 +219,7 @@ namespace SaiyanTransformations
                 MineLevel = 100, Reward = BossReward.Technique, TechniqueId = "SolarFlare",
                 Squad = new[] { MonsterKind.SquidKid },
                 HealthMultiplier = 1.15f, DamageMultiplier = 1.15f, Resilience = 4,
-                Scale = 1.3f, AuraColor = new Color(200, 150, 235),
+                Scale = 0.95f, AuraColor = new Color(200, 150, 235),
                 Abilities = BossAbility.KiBlast, SpriteSheet = "friezafirst"
             },
             new BossDefinition
@@ -229,7 +229,7 @@ namespace SaiyanTransformations
                 MineLevel = 110, Reward = BossReward.PowerCache, CacheKi = 32f, CacheAttack = 0.045f,
                 Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.15f, DamageMultiplier = 1.1f, Resilience = 5,
-                Scale = 1.5f, AuraColor = new Color(150, 230, 220), SpeedBonus = 1,
+                Scale = 0.95f, AuraColor = new Color(150, 230, 220), SpeedBonus = 1,
                 SpriteSheet = "coolerfirst"
             },
             new BossDefinition
@@ -239,7 +239,7 @@ namespace SaiyanTransformations
                 MineLevel = 140, Reward = BossReward.Form, FormIndex = 3,
                 Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.28f, DamageMultiplier = 1.2f, Resilience = 6,
-                Scale = 1.6f, AuraColor = new Color(235, 205, 245),
+                Scale = 1.00f, AuraColor = new Color(235, 205, 245),
                 Abilities = BossAbility.Beam | BossAbility.KiBlast,
                 PhaseCount = 2, PhaseAbility = BossAbility.KiBlast, SpriteSheet = "friezafinal"
             },
@@ -251,7 +251,7 @@ namespace SaiyanTransformations
                 BonusTechniqueId = "SpiritBomb",
                 Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.15f, DamageMultiplier = 1.1f, Resilience = 5,
-                Scale = 1.4f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
+                Scale = 0.88f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
             },
             new BossDefinition
             {
@@ -260,7 +260,7 @@ namespace SaiyanTransformations
                 MineLevel = 280, Reward = BossReward.PowerCache, CacheKi = 78f, CacheAttack = 0.12f,
                 Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.78f, DamageMultiplier = 1.44f, Resilience = 13,
-                Scale = 2.2f, AuraColor = new Color(255, 215, 90),
+                Scale = 1.05f, AuraColor = new Color(255, 215, 90),
                 Abilities = BossAbility.Beam | BossAbility.KiBlast, SpeedBonus = 3,
                 PhaseCount = 2, PhaseAbility = BossAbility.KiBlast, SpriteSheet = "friezagolden"
             },
@@ -271,7 +271,7 @@ namespace SaiyanTransformations
                 MineLevel = 150, Reward = BossReward.Supplies, SupplySenzu = 3, SupplyGold = 16000,
                 Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.25f, DamageMultiplier = 1.2f, Resilience = 6,
-                Scale = 1.6f, AuraColor = new Color(110, 210, 200),
+                Scale = 1.00f, AuraColor = new Color(110, 210, 200),
                 Abilities = BossAbility.Beam, SpeedBonus = 1, PhaseCount = 1,
                 SpriteSheet = "coolerfinal"
             },
@@ -282,7 +282,7 @@ namespace SaiyanTransformations
                 MineLevel = 160, Reward = BossReward.DragonBall, DragonBallNumber = 3,
                 Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.2f, DamageMultiplier = 1.15f, Resilience = 6,
-                Scale = 1.45f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
+                Scale = 0.88f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
             },
             new BossDefinition
             {
@@ -291,7 +291,7 @@ namespace SaiyanTransformations
                 MineLevel = 170, Reward = BossReward.PowerCache, CacheKi = 38f, CacheAttack = 0.055f,
                 Squad = new[] { MonsterKind.Mummy },
                 HealthMultiplier = 1.2f, DamageMultiplier = 1.15f, Resilience = 6,
-                Scale = 1.4f, AuraColor = new Color(120, 200, 120),
+                Scale = 0.90f, AuraColor = new Color(120, 200, 120),
                 Abilities = BossAbility.Regenerate, SpriteSheet = "cellimperfect"
             },
             new BossDefinition
@@ -301,7 +301,7 @@ namespace SaiyanTransformations
                 MineLevel = 175, Reward = BossReward.Supplies, SupplySenzu = 3, SupplyGold = 18000,
                 Squad = new[] { MonsterKind.Mummy },
                 HealthMultiplier = 1.25f, DamageMultiplier = 1.2f, Resilience = 7,
-                Scale = 1.55f, AuraColor = new Color(140, 220, 140),
+                Scale = 0.90f, AuraColor = new Color(140, 220, 140),
                 Abilities = BossAbility.Regenerate, SpriteSheet = "cellsemiperfect"
             },
             new BossDefinition
@@ -309,10 +309,10 @@ namespace SaiyanTransformations
                 Id = "CellJuniors", DisplayName = "Cell Juniors",
                 Subtitle = "Small, blue, and merciless",
                 MineLevel = 180, Reward = BossReward.Supplies, SupplySenzu = 3, SupplyGold = 20000,
-                Squad = new[] { MonsterKind.GreenSlime, MonsterKind.GreenSlime,
-                                MonsterKind.GreenSlime, MonsterKind.GreenSlime },
+                Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute,
+                                MonsterKind.ShadowBrute, MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.25f, DamageMultiplier = 1.2f, Resilience = 6,
-                Scale = 1.05f, AuraColor = new Color(150, 210, 255), SpriteSheet = "celljr"
+                Scale = 0.92f, AuraColor = new Color(150, 210, 255), SpriteSheet = "celljr"
             },
             new BossDefinition
             {
@@ -321,7 +321,7 @@ namespace SaiyanTransformations
                 MineLevel = 190, Reward = BossReward.Form, FormIndex = 4,
                 Squad = new[] { MonsterKind.Mummy },
                 HealthMultiplier = 1.35f, DamageMultiplier = 1.25f, Resilience = 7,
-                Scale = 1.7f, AuraColor = new Color(140, 240, 140),
+                Scale = 0.98f, AuraColor = new Color(140, 240, 140),
                 Abilities = BossAbility.Beam | BossAbility.Regenerate, PhaseCount = 2,
                 SpriteSheet = "cellperfect"
             },
@@ -334,7 +334,7 @@ namespace SaiyanTransformations
                 MineLevel = 200, Reward = BossReward.Technique, TechniqueId = "Kaioken",
                 Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.3f, DamageMultiplier = 1.2f, Resilience = 7,
-                Scale = 1.55f, AuraColor = new Color(120, 230, 170), SpriteSheet = "bojack"
+                Scale = 0.92f, AuraColor = new Color(120, 230, 170), SpriteSheet = "bojack"
             },
             new BossDefinition
             {
@@ -344,7 +344,7 @@ namespace SaiyanTransformations
                 Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute,
                                 MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.3f, DamageMultiplier = 1.2f, Resilience = 8,
-                Scale = 1.45f, AuraColor = new Color(200, 60, 60), SpriteSheet = "dabura",
+                Scale = 0.92f, AuraColor = new Color(200, 60, 60), SpriteSheet = "dabura",
                 Abilities = BossAbility.Paralyze
             },
             new BossDefinition
@@ -354,7 +354,7 @@ namespace SaiyanTransformations
                 MineLevel = 220, Reward = BossReward.DragonBall, DragonBallNumber = 4,
                 Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.3f, DamageMultiplier = 1.2f, Resilience = 8,
-                Scale = 1.45f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
+                Scale = 0.88f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
             },
             new BossDefinition
             {
@@ -363,7 +363,7 @@ namespace SaiyanTransformations
                 MineLevel = 225, Reward = BossReward.PowerCache, CacheKi = 48f, CacheAttack = 0.07f,
                 Squad = new[] { MonsterKind.Mummy },
                 HealthMultiplier = 1.35f, DamageMultiplier = 1.25f, Resilience = 8,
-                Scale = 1.7f, AuraColor = new Color(255, 180, 220),
+                Scale = 1.05f, AuraColor = new Color(255, 180, 220),
                 Abilities = BossAbility.Regenerate, SpriteSheet = "buufat"
             },
             new BossDefinition
@@ -373,7 +373,7 @@ namespace SaiyanTransformations
                 MineLevel = 230, Reward = BossReward.Supplies, SupplySenzu = 4, SupplyGold = 30000,
                 Squad = new[] { MonsterKind.Mummy, MonsterKind.Mummy },
                 HealthMultiplier = 1.4f, DamageMultiplier = 1.25f, Resilience = 8,
-                Scale = 1.15f, AuraColor = new Color(255, 130, 210), SpriteSheet = "superbuu",
+                Scale = 0.78f, AuraColor = new Color(255, 130, 210), SpriteSheet = "superbuu",
                 Abilities = BossAbility.Regenerate
             },
             new BossDefinition
@@ -383,7 +383,7 @@ namespace SaiyanTransformations
                 MineLevel = 240, Reward = BossReward.Form, FormIndex = 5,
                 Squad = new[] { MonsterKind.Mummy },
                 HealthMultiplier = 1.55f, DamageMultiplier = 1.3f, Resilience = 9,
-                Scale = 1.9f, AuraColor = new Color(255, 120, 200),
+                Scale = 0.98f, AuraColor = new Color(255, 120, 200),
                 Abilities = BossAbility.Beam | BossAbility.Regenerate | BossAbility.Teleport,
                 PhaseCount = 2, PhaseAbility = BossAbility.Teleport, SpriteSheet = "buusupergohan"
             },
@@ -395,7 +395,7 @@ namespace SaiyanTransformations
                 Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute,
                                 MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.35f, DamageMultiplier = 1.25f, Resilience = 9,
-                Scale = 1.6f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
+                Scale = 0.88f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
             },
             new BossDefinition
             {
@@ -405,7 +405,7 @@ namespace SaiyanTransformations
                 Squad = new[] { MonsterKind.Mummy, MonsterKind.Mummy, MonsterKind.Mummy,
                                 MonsterKind.Mummy },
                 HealthMultiplier = 1.5f, DamageMultiplier = 1.35f, Resilience = 11,
-                Scale = 1.6f, AuraColor = new Color(170, 220, 255), SpriteSheet = "metalcooler"
+                Scale = 0.92f, AuraColor = new Color(170, 220, 255), SpriteSheet = "metalcooler"
             },
             new BossDefinition
             {
@@ -415,7 +415,7 @@ namespace SaiyanTransformations
                 Squad = new[] { MonsterKind.Mummy, MonsterKind.Mummy,
                                 MonsterKind.Mummy, MonsterKind.Mummy },
                 HealthMultiplier = 1.65f, DamageMultiplier = 1.4f, Resilience = 12,
-                Scale = 1.7f, AuraColor = new Color(255, 150, 210), SpriteSheet = "kidbuu",
+                Scale = 0.92f, AuraColor = new Color(255, 150, 210), SpriteSheet = "kidbuu",
                 Abilities = BossAbility.Regenerate | BossAbility.Shockwave,
                 SpeedBonus = 2, PhaseCount = 1
             },
@@ -427,7 +427,7 @@ namespace SaiyanTransformations
                 Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute,
                                 MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.4f, DamageMultiplier = 1.3f, Resilience = 10,
-                Scale = 1.6f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
+                Scale = 0.88f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
             },
             new BossDefinition
             {
@@ -436,7 +436,7 @@ namespace SaiyanTransformations
                 MineLevel = 205, Reward = BossReward.PowerCache, CacheKi = 44f, CacheAttack = 0.07f,
                 Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.4f, DamageMultiplier = 1.25f, Resilience = 8,
-                Scale = 2.0f, AuraColor = new Color(150, 240, 120), SpriteSheet = "broly",
+                Scale = 1.12f, AuraColor = new Color(150, 240, 120), SpriteSheet = "broly",
                 Abilities = BossAbility.Shockwave, SpeedBonus = 1,
                 PhaseCount = 2, PhaseAbility = BossAbility.KiBlast
             },
@@ -447,7 +447,7 @@ namespace SaiyanTransformations
                 MineLevel = 285, Reward = BossReward.PowerCache, CacheKi = 80f, CacheAttack = 0.13f,
                 Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.8f, DamageMultiplier = 1.45f, Resilience = 13,
-                Scale = 2.2f, AuraColor = new Color(130, 60, 160),
+                Scale = 1.15f, AuraColor = new Color(130, 60, 160),
                 Abilities = BossAbility.Beam | BossAbility.KiBlast | BossAbility.Teleport,
                 SpeedBonus = 3, PhaseCount = 2, PhaseAbility = BossAbility.Beam,
                 SpriteSheet = "friezablack"
@@ -460,7 +460,7 @@ namespace SaiyanTransformations
                 Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute,
                                 MonsterKind.ShadowBrute, MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.5f, DamageMultiplier = 1.35f, Resilience = 11,
-                Scale = 1.7f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
+                Scale = 0.88f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
             },
             new BossDefinition
             {
@@ -470,7 +470,7 @@ namespace SaiyanTransformations
                 Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute,
                                 MonsterKind.ShadowBrute, MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.85f, DamageMultiplier = 1.5f, Resilience = 14,
-                Scale = 2.4f, AuraColor = new Color(190, 120, 255), SpriteSheet = "destroyer",
+                Scale = 1.18f, AuraColor = new Color(190, 120, 255), SpriteSheet = "destroyer",
                 Abilities = BossAbility.Teleport | BossAbility.KiBlast | BossAbility.Rush,
                 SpeedBonus = 3, PhaseCount = 2, PhaseAbility = BossAbility.Beam
             }
@@ -1342,7 +1342,7 @@ namespace SaiyanTransformations
                 monster.resilience.Value += 12 + (2 * defeats);
                 monster.moveTowardPlayerThreshold.Value = 999;
                 monster.speed += 2;
-                monster.Scale = 1.6f;
+                monster.Scale = 0.82f;   // 66px hand-drawn sheet; keep on-screen size sane
                 monster.modData[InvaderKey] = "1";
                 this.ApplySprite(monster, kind, "invader");
 

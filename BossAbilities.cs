@@ -32,8 +32,11 @@ namespace SaiyanTransformations
 
         private const int ShockCooldown = 260;
         private const int ShockTelegraph = 30;
-        private const int ShockTotal = 46;
-        private const float ShockRadius = 150f;
+        private const int ShockTotal = 50;
+        private const float ShockRadius = 190f;
+
+        // how many ticks after a boom/beam fires it keeps trying to connect
+        private const int AoeHitWindow = 4;
 
         /// <summary>modData key a boss carries once a phase grants it an extra ability.</summary>
         public const string PhaseAbilityKey = "khaleelkhan.SaiyanTransformations/phaseability";
@@ -109,6 +112,20 @@ namespace SaiyanTransformations
             if (p == null || damage <= 0 || p.temporaryInvincibilityTimer > 0)
                 return;
             p.takeDamage(damage, true, null);
+        }
+
+        /// <summary>Damage from a telegraphed, dodgeable area attack (a shockwave, a beam, a
+        /// self-destruct). Unlike a stray projectile these ignore the brief invincibility the
+        /// player gets from being grazed in melee - otherwise a boss standing next to you
+        /// would have its big wind-up move eaten by its own poke, and it would look like the
+        /// attack did nothing. Standing in the blast when it goes off means you take it.</summary>
+        private void HitPlayerForce(int damage)
+        {
+            Farmer p = Game1.player;
+            if (p == null || damage <= 0)
+                return;
+            p.temporaryInvincibilityTimer = 0;
+            p.takeDamage(damage, true, null);   // takeDamage grants its own fresh i-frames
         }
 
         private int Scaled(BossDefinition def, float multiple)
@@ -397,12 +414,15 @@ namespace SaiyanTransformations
 
                     case Kind.Beam:
                         h.Timer++;
-                        if (h.Timer == BeamTelegraph && !h.Hit)
-                        {
-                            if (this.InCorridor(h, player))
-                                this.HitPlayer(h.Damage);
-                            h.Hit = true;
+                        if (h.Timer == BeamTelegraph)
                             Owner.PlayCue("kame_fire", "explosion");
+                        // damage lands across a short window so a single frame of i-frames
+                        // (or a step through the beam) does not swallow the whole attack
+                        if (h.Timer >= BeamTelegraph && h.Timer <= BeamTelegraph + AoeHitWindow
+                            && !h.Hit && this.InCorridor(h, player))
+                        {
+                            this.HitPlayerForce(h.Damage);
+                            h.Hit = true;
                         }
                         if (h.Timer >= BeamTelegraph + BeamFire)
                             h.Done = true;
@@ -410,10 +430,12 @@ namespace SaiyanTransformations
 
                     case Kind.Boom:
                         h.Timer++;
-                        if (h.Timer == h.Telegraph && !h.Hit)
+                        if (h.Timer == h.Telegraph && Owner.Config.ScreenFlash)
+                            Game1.flashAlpha = 0.35f;
+                        if (h.Timer >= h.Telegraph && h.Timer <= h.Telegraph + AoeHitWindow
+                            && !h.Hit && Vector2.Distance(h.Pos, player) <= h.HalfWidth)
                         {
-                            if (Vector2.Distance(h.Pos, player) <= h.HalfWidth)
-                                this.HitPlayer(h.Damage);
+                            this.HitPlayerForce(h.Damage);
                             h.Hit = true;
                         }
                         if (h.Timer >= h.Total)
@@ -480,13 +502,27 @@ namespace SaiyanTransformations
                     case Kind.Boom:
                     {
                         Vector2 local = Game1.GlobalToLocal(Game1.viewport, h.Pos);
-                        float t = h.Timer / (float)Math.Max(1, h.Total);
-                        int frame = Math.Min(3, (int)(t * 4f));
-                        // grow the ring out to the hazard's actual radius
-                        float scale = (0.3f + (0.7f * t)) * (h.HalfWidth / 16f);
-                        b.Draw(tex, new Vector2(local.X - (16 * scale), local.Y - (16 * scale)),
-                               new Rectangle(frame * 32, 64, 32, 32), h.Colour * (1f - t), 0f,
-                               Vector2.Zero, scale, SpriteEffects.None, 0f);
+                        float fullScale = h.HalfWidth / 16f;
+                        if (h.Timer < h.Telegraph)
+                        {
+                            // wind-up: a pulsing red danger ring at the true blast radius so
+                            // the player can read exactly where to not be standing
+                            float pulse = 0.30f + 0.30f * (float)Math.Sin(h.Timer * 0.4);
+                            b.Draw(tex, new Vector2(local.X - (16 * fullScale), local.Y - (16 * fullScale)),
+                                   new Rectangle(0, 64, 32, 32), new Color(255, 70, 60) * pulse, 0f,
+                                   Vector2.Zero, fullScale, SpriteEffects.None, 0f);
+                        }
+                        else
+                        {
+                            // detonation: bright ring snaps out to full radius and fades
+                            float t = (h.Timer - h.Telegraph)
+                                      / (float)Math.Max(1, h.Total - h.Telegraph);
+                            int frame = Math.Min(3, (int)(t * 4f));
+                            float scale = (0.55f + (0.45f * t)) * fullScale;
+                            b.Draw(tex, new Vector2(local.X - (16 * scale), local.Y - (16 * scale)),
+                                   new Rectangle(frame * 32, 64, 32, 32), h.Colour * (1f - (t * 0.6f)), 0f,
+                                   Vector2.Zero, scale, SpriteEffects.None, 0f);
+                        }
                         break;
                     }
                 }
