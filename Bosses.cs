@@ -136,8 +136,8 @@ namespace SaiyanTransformations
                 MineLevel = 20, Reward = BossReward.Technique, TechniqueId = "DestructoDisk",
                 Squad = new[] { MonsterKind.SquidKid },
                 HealthMultiplier = 0.95f, DamageMultiplier = 0.95f, Resilience = 2,
-                Scale = 1.15f, AuraColor = new Color(140, 210, 130),
-                Abilities = BossAbility.Teleport | BossAbility.Paralyze
+                Scale = 0.85f, AuraColor = new Color(140, 210, 130),
+                Abilities = BossAbility.Teleport | BossAbility.Paralyze, SpriteSheet = "guldo"
             },
             new BossDefinition
             {
@@ -156,7 +156,8 @@ namespace SaiyanTransformations
                 MineLevel = 40, Reward = BossReward.Supplies, SupplySenzu = 2, SupplyGold = 8000,
                 Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.05f, DamageMultiplier = 1.05f, Resilience = 3,
-                Scale = 1.4f, AuraColor = new Color(255, 110, 90), Abilities = BossAbility.KiBlast
+                Scale = 1.05f, AuraColor = new Color(255, 110, 90),
+                Abilities = BossAbility.KiBlast, SpriteSheet = "jeice"
             },
             new BossDefinition
             {
@@ -372,7 +373,7 @@ namespace SaiyanTransformations
                 MineLevel = 230, Reward = BossReward.Supplies, SupplySenzu = 4, SupplyGold = 30000,
                 Squad = new[] { MonsterKind.Mummy, MonsterKind.Mummy },
                 HealthMultiplier = 1.4f, DamageMultiplier = 1.25f, Resilience = 8,
-                Scale = 1.6f, AuraColor = new Color(255, 130, 210), SpriteSheet = "superbuu",
+                Scale = 1.15f, AuraColor = new Color(255, 130, 210), SpriteSheet = "superbuu",
                 Abilities = BossAbility.Regenerate
             },
             new BossDefinition
@@ -799,8 +800,9 @@ namespace SaiyanTransformations
                 ["coolerfinal"] = (30, 48), ["metalcooler"] = (28, 46), ["cellimperfect"] = (30, 46),
                 ["cellsemiperfect"] = (30, 48), ["cellperfect"] = (30, 50), ["bojack"] = (28, 46),
                 ["dabura"] = (28, 46), ["broly"] = (32, 50), ["destroyer"] = (30, 50),
-                ["buufat"] = (32, 46), ["buusupergohan"] = (30, 50), ["superbuu"] = (28, 46),
-                ["guardian"] = (30, 48)
+                ["buufat"] = (32, 46), ["buusupergohan"] = (30, 50), ["superbuu"] = (40, 64),
+                ["guardian"] = (30, 48), ["invader"] = (42, 66),
+                ["jeice"] = (38, 60), ["guldo"] = (34, 50), ["kidbuu"] = (28, 46)
             };
 
         /// <summary>Swap in a sprite sheet for this instance only. A boss may name its own
@@ -1309,9 +1311,10 @@ namespace SaiyanTransformations
                 return 0;
 
             // one relentless invader, with escalating backup as it keeps coming back
+            // all Shadow Brutes so every body can wear the single hand-drawn invader sheet
             var squad = new System.Collections.Generic.List<MonsterKind> { MonsterKind.ShadowBrute };
-            if (defeats >= 1) squad.Add(MonsterKind.Serpent);
-            if (defeats >= 3) squad.Add(MonsterKind.Mummy);
+            if (defeats >= 1) squad.Add(MonsterKind.ShadowBrute);
+            if (defeats >= 3) squad.Add(MonsterKind.ShadowBrute);
             if (defeats >= 5) squad.Add(MonsterKind.ShadowBrute);
 
             BossDefinition yardstick = new BossDefinition
@@ -1339,7 +1342,7 @@ namespace SaiyanTransformations
                 monster.resilience.Value += 12 + (2 * defeats);
                 monster.moveTowardPlayerThreshold.Value = 999;
                 monster.speed += 2;
-                monster.Scale = 2.2f;
+                monster.Scale = 1.6f;
                 monster.modData[InvaderKey] = "1";
                 this.ApplySprite(monster, kind, "invader");
 

@@ -31,8 +31,12 @@ MAP = {
  "god of destruction": ("destroyer","ShadowBrute",30,50),
  "fat buu": ("buufat","Mummy",32,46),
  "super buu (gohan absorbed)": ("buusupergohan","Mummy",30,50),
- "super buu": ("superbuu","Mummy",28,46),
+ "super buu": ("kidbuu","Mummy",28,46),
+ "real super buu": ("superbuu","Mummy",40,64),
  "dragonball guardian": ("guardian","ShadowBrute",30,48),
+ "multi dimensional invader": ("invader","ShadowBrute",42,66),
+ "jeice": ("jeice","ShadowBrute",38,60),
+ "guldo": ("guldo","SquidKid",34,50),
  # invader excluded: dark-on-dark source does not key cleanly; keeps its placeholder
 }
 ROWS = {"GreenSlime":7,"SquidKid":4,"ShadowBrute":8,"Mummy":5}

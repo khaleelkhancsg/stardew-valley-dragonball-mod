@@ -551,8 +551,6 @@ SHEETS = {
     # broly, destroyer, superbuu, metalcooler, celljr, and the whole Frieza/
     # Cooler/Cell/Buu/Ginyu roster) were removed here so re-running the
     # generator can never overwrite that art. Only true placeholders remain.
-    "invader":   dict(size=(64, 256), frame=(16, 32), kind="humanoid"),
-    "kidbuu":    dict(size=(64, 160), frame=(16, 32), kind="humanoid"),
 }
 
 # which facing each row represents, cycling so every row of every sheet is filled
