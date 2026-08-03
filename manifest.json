@@ -1,0 +1,10 @@
+{
+  "Name": "Saiyan Transformations",
+  "Author": "khaleelkhan",
+  "Version": "1.0.0",
+  "Description": "Unlock Dragon Ball style transformations by descending the mines. Power up for aura, hair and huge stat multipliers, and fire a Kamehameha.",
+  "UniqueID": "khaleelkhan.SaiyanTransformations",
+  "EntryDll": "SaiyanTransformations.dll",
+  "MinimumApiVersion": "4.0.0",
+  "UpdateKeys": []
+}

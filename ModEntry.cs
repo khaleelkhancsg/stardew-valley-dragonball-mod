@@ -1,0 +1,1196 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
+using Microsoft.Xna.Framework.Graphics;
+using StardewModdingAPI;
+using StardewModdingAPI.Events;
+using StardewValley;
+using StardewValley.Buffs;
+using StardewValley.GameData;
+using StardewValley.Locations;
+using StardewValley.Monsters;
+
+namespace SaiyanTransformations
+{
+    public sealed class ModEntry : Mod
+    {
+        /// <summary>Custom hair sheet, referenced from our Data/HairData entries.</summary>
+        public const string HairAssetName = "Characters/Farmer/saiyanhair";
+
+        /// <summary>Prefix for our boss sprite sheets, loaded on demand.</summary>
+        public const string MonsterAssetPrefix = "Mods/khaleelkhan.SaiyanTransformations/monsters/";
+
+        public static string MonsterAssetName(string sheet) => MonsterAssetPrefix + sheet;
+
+        private const string BuffIdPrefix = "khaleelkhan.SaiyanTransformations.";
+        private const string CuePrefix = "khaleelkhan.SaiyanTransformations_";
+        private const int BurstLength = 22;
+        private const int DodgeFlashLength = 30;
+
+        /// <summary>Every wav in assets/sounds. Names ending in "_loop" are registered
+        /// as looping cues and driven with ICue.Play/Stop.</summary>
+        private static readonly string[] CueNames =
+        {
+            "transform_ssj", "transform_ssj2", "transform_ssj3", "transform_god",
+            "transform_blue", "transform_ui", "aura_loop", "kame_charge", "kame_fire",
+            "kame_beam_loop", "kame_impact", "powerdown", "unlock",
+            "boss_roar", "boss_defeat", "dodge"
+        };
+
+        internal ModConfig Config;
+        internal Texture2D AuraTexture;
+        internal Texture2D LightningTexture;
+        internal Texture2D KameTexture;
+        internal Texture2D IconTexture;
+        internal Texture2D DiskTexture;
+        internal Texture2D TechniqueIconTexture;
+        internal Texture2D KiBarTexture;
+        internal int AnimTicks;
+
+        private FxRenderer Fx;
+        private TechniqueManager Techniques;
+
+        private int formIndex = -1;
+        private int savedHair = -1;
+        private Color savedHairColor = Color.White;
+        private int burstTicks;
+        private int announcedUnlocks = -1;
+        private ICue auraCue;
+        private BossManager Bosses;
+        internal DragonBallManager DragonBalls;
+        internal KiManager Ki;
+        internal ProgressManager Progress;
+        private RivalManager Rivals;
+        private InvaderManager Invader;
+
+        // boss-floor gate: remember the floor we are on and whether its boss still lives,
+        // so a descent past a living boss can be bounced back
+        private int lastMineLevel = -1;
+        private bool lastFloorSealed;
+        private int pendingGateBounce = -1;
+        private int lastHealth = -1;
+        private int dodgeTicks;
+        private int untouchedTicks;
+        private bool senzuPending;
+        private int kaiokenTicks;
+        private float kaiokenHealthCarry;
+
+        internal Transformation CurrentForm =>
+            this.formIndex >= 0 && this.formIndex < Transformation.All.Length
+                ? Transformation.All[this.formIndex]
+                : null;
+
+        public override void Entry(IModHelper helper)
+        {
+            this.Config = helper.ReadConfig<ModConfig>();
+            this.Fx = new FxRenderer(this);
+            this.Techniques = new TechniqueManager(this, this.Fx);
+            this.Bosses = new BossManager(this, this.Fx);
+            this.DragonBalls = new DragonBallManager(this);
+            this.Ki = new KiManager(this);
+            this.Progress = new ProgressManager(this);
+            this.Rivals = new RivalManager(this);
+            this.Invader = new InvaderManager(this);
+
+            // let the config drive Ultra Instinct's evasion rate
+            Transformation.All[5].DodgeChance = this.Config.UltraInstinctDodgeChance;
+            Transformation.All[6].RequiredWishes = this.Config.MasteredUltraInstinctWishes;
+
+            helper.Events.GameLoop.GameLaunched += this.OnGameLaunched;
+            helper.Events.GameLoop.UpdateTicked += this.OnUpdateTicked;
+            helper.Events.GameLoop.Saving += this.OnSaving;
+            helper.Events.GameLoop.ReturnedToTitle += this.OnReturnedToTitle;
+            helper.Events.Content.AssetRequested += this.OnAssetRequested;
+            helper.Events.Input.ButtonsChanged += this.OnButtonsChanged;
+            helper.Events.Player.Warped += this.OnWarped;
+            helper.Events.Display.RenderedWorld += this.OnRenderedWorld;
+            helper.Events.Display.RenderedHud += this.OnRenderedHud;
+            helper.Events.GameLoop.SaveLoaded += this.OnSaveLoaded;
+            helper.Events.World.ObjectListChanged += this.OnObjectListChanged;
+            helper.Events.GameLoop.DayStarted += this.OnDayStarted;
+            helper.Events.GameLoop.TimeChanged += this.OnTimeChanged;
+
+            helper.ConsoleCommands.Add(
+                "saiyan",
+                "Saiyan Transformations.\n\n"
+                + "Usage: saiyan status | unlock_all | form <1-6> | off | bosses | clearboss | pose <n>",
+                this.OnCommand);
+        }
+
+        // ------------------------------------------------------------ setup
+
+        private void OnGameLaunched(object sender, GameLaunchedEventArgs e)
+        {
+            this.AuraTexture = this.Helper.ModContent.Load<Texture2D>("assets/aura.png");
+            this.LightningTexture = this.Helper.ModContent.Load<Texture2D>("assets/lightning.png");
+            this.KameTexture = this.Helper.ModContent.Load<Texture2D>("assets/kamehameha.png");
+            this.IconTexture = this.Helper.ModContent.Load<Texture2D>("assets/icons.png");
+            this.DiskTexture = this.Helper.ModContent.Load<Texture2D>("assets/disk.png");
+            this.TechniqueIconTexture =
+                this.Helper.ModContent.Load<Texture2D>("assets/technique_icons.png");
+            this.KiBarTexture = this.Helper.ModContent.Load<Texture2D>("assets/kibar.png");
+        }
+
+        private void OnAssetRequested(object sender, AssetRequestedEventArgs e)
+        {
+            if (e.NameWithoutLocale.IsEquivalentTo(HairAssetName))
+                e.LoadFromModFile<Texture2D>("assets/saiyanhair.png", AssetLoadPriority.Medium);
+            else if (e.NameWithoutLocale.IsEquivalentTo("Data/HairData"))
+                e.Edit(this.EditHairData, AssetEditPriority.Late);
+            else if (e.NameWithoutLocale.IsEquivalentTo("Data/AudioChanges"))
+                e.Edit(this.EditAudioChanges, AssetEditPriority.Late);
+            else if (e.NameWithoutLocale.IsEquivalentTo("Data/Objects"))
+                e.Edit(this.DragonBalls.EditObjectData, AssetEditPriority.Late);
+            else if (e.NameWithoutLocale.IsEquivalentTo(DragonBallManager.TextureAsset))
+                e.LoadFromModFile<Texture2D>("assets/dragonballs.png", AssetLoadPriority.Medium);
+            else if (e.NameWithoutLocale.IsEquivalentTo(DragonBallManager.SenzuTextureAsset))
+                e.LoadFromModFile<Texture2D>("assets/senzu.png", AssetLoadPriority.Medium);
+            else if (e.NameWithoutLocale.StartsWith(MonsterAssetPrefix))
+            {
+                string sheet = e.NameWithoutLocale.Name.Substring(MonsterAssetPrefix.Length);
+                e.LoadFromModFile<Texture2D>($"assets/monsters/{sheet}.png",
+                                             AssetLoadPriority.Medium);
+            }
+        }
+
+        /// <summary>Register the transformation hairstyles without replacing any vanilla ones.
+        /// Format is "texture/tileX/tileY/uniqueLeftSprite/coveredIndex/isBald", where the
+        /// texture name is relative to Characters/Farmer and the tiles are 16px units.</summary>
+        private void EditHairData(IAssetData asset)
+        {
+            string Entry(Transformation form) => $"saiyanhair/{form.SpriteIndex}/0/false/-1/false";
+
+            // the key type changed between game versions, so handle both
+            if (asset.Data is IDictionary<int, string> byInt)
+            {
+                foreach (Transformation form in Transformation.All)
+                    byInt[form.HairId] = Entry(form);
+            }
+            else if (asset.Data is IDictionary<string, string> byString)
+            {
+                foreach (Transformation form in Transformation.All)
+                    byString[form.HairId.ToString()] = Entry(form);
+            }
+            else
+            {
+                this.Monitor.Log(
+                    $"Data/HairData was {asset.Data?.GetType().FullName ?? "null"}, which this mod "
+                    + "does not know how to edit. Transformations will still work, but hair will not change.",
+                    LogLevel.Warn);
+            }
+        }
+
+        /// <summary>Register our wavs as game audio cues, so Game1.playSound can reach them.</summary>
+        private void EditAudioChanges(IAssetData asset)
+        {
+            IDictionary<string, AudioCueData> data = asset.AsDictionary<string, AudioCueData>().Data;
+            string dir = Path.Combine(this.Helper.DirectoryPath, "assets", "sounds");
+
+            foreach (string name in CueNames)
+            {
+                string path = Path.Combine(dir, name + ".wav");
+                if (!File.Exists(path))
+                {
+                    this.Monitor.Log($"Missing sound file {path}; that cue will be silent.", LogLevel.Warn);
+                    continue;
+                }
+
+                string id = CueId(name);
+                data[id] = new AudioCueData
+                {
+                    Id = id,
+                    Category = "Sound",
+                    FilePaths = new List<string> { path },
+                    Looped = name.EndsWith("_loop"),
+                    StreamedVorbis = false,
+                    UseReverb = false
+                };
+            }
+        }
+
+        internal static string CueId(string name) => CuePrefix + name;
+
+        /// <summary>Play one of our cues, falling back to a vanilla one if custom audio is off.</summary>
+        internal void PlayCue(string name, string fallback = null)
+        {
+            if (this.Config.EnableCustomSounds)
+                ModEntry.SafeSound(CueId(name));
+            else if (fallback != null)
+                ModEntry.SafeSound(fallback);
+        }
+
+        /// <summary>Start a looping cue. Returns null if audio is off or the cue is missing.</summary>
+        internal ICue PlayLoop(string name)
+        {
+            if (!this.Config.EnableCustomSounds)
+                return null;
+            try
+            {
+                ICue cue = Game1.soundBank.GetCue(CueId(name));
+                cue.Play();
+                return cue;
+            }
+            catch (Exception ex)
+            {
+                this.Monitor.Log($"Could not start looping cue '{name}': {ex.Message}", LogLevel.Debug);
+                return null;
+            }
+        }
+
+        internal static void StopLoop(ref ICue cue)
+        {
+            if (cue == null)
+                return;
+            try
+            {
+                cue.Stop(AudioStopOptions.Immediate);
+            }
+            catch (Exception)
+            {
+                // already gone
+            }
+            cue = null;
+        }
+
+        private void StartAuraLoop()
+        {
+            ModEntry.StopLoop(ref this.auraCue);
+            if (this.Config.AuraLoopSound)
+                this.auraCue = this.PlayLoop("aura_loop");
+        }
+
+        /// <summary>A fully mastered form runs "calm" — no visible aura, no electric
+        /// crackle and no hum — unless the player is actively charging ki, at which point
+        /// the aura roars back to life. Only the form you have mastered goes calm; an
+        /// unmastered form still blazes normally.</summary>
+        internal bool FormIsCalm(Transformation form)
+        {
+            return form != null
+                   && this.Config.CalmMasteredAura
+                   && this.Progress.IsMastered(form)
+                   && !this.Ki.IsCharging;
+        }
+
+        /// <summary>Start or silence the aura hum to match the calm state each tick.</summary>
+        private void UpdateAuraSound()
+        {
+            Transformation form = this.CurrentForm;
+            if (form == null)
+                return;
+
+            bool wantHum = this.Config.AuraLoopSound && !this.FormIsCalm(form);
+            if (wantHum && this.auraCue == null)
+                this.StartAuraLoop();
+            else if (!wantHum && this.auraCue != null)
+                ModEntry.StopLoop(ref this.auraCue);
+        }
+
+        // ------------------------------------------------------------ unlocks
+
+        internal int UnlockLevelFor(int index)
+        {
+            switch (index)
+            {
+                case 0: return this.Config.SuperSaiyanMineLevel;
+                case 1: return this.Config.SuperSaiyan2MineLevel;
+                case 2: return this.Config.SuperSaiyan3MineLevel;
+                case 3: return this.Config.SuperSaiyanGodMineLevel;
+                case 4: return this.Config.SuperSaiyanBlueMineLevel;
+                case 5: return this.Config.UltraInstinctMineLevel;
+                case 6: return this.Config.MasteredUltraInstinctMineLevel;
+                default: return Transformation.All[index].DefaultUnlockLevel;
+            }
+        }
+
+        internal int DeepestMineLevel()
+        {
+            if (!Context.IsWorldReady || Game1.player == null)
+                return 0;
+
+            int deepest = Game1.player.deepestMineLevel;
+            if (Game1.currentLocation is MineShaft shaft)
+            {
+                int here = shaft.mineLevel;
+                if (here > deepest)
+                    deepest = here;
+            }
+            return deepest;
+        }
+
+        /// <summary>How many forms are available, in order.</summary>
+        internal int UnlockedCount()
+        {
+            if (this.Config.UnlockEverything)
+                return Transformation.All.Length;
+
+            int deepest = this.DeepestMineLevel();
+            int count = 0;
+            for (int i = 0; i < Transformation.All.Length; i++)
+            {
+                if (deepest < this.UnlockLevelFor(i))
+                    break;
+                if (this.Config.EnableBosses && this.Config.RequireBossKills
+                    && !this.Bosses.IsFormUnlockedByBoss(i))
+                {
+                    break;
+                }
+                if (Transformation.All[i].RequiredWishes > 0
+                    && this.DragonBalls.State.WishesGranted < Transformation.All[i].RequiredWishes)
+                {
+                    break;
+                }
+                count = i + 1;
+            }
+            return Math.Max(count, this.Bosses.GrantedFormUnlocks);
+        }
+
+        internal Vector2 FxPlayerAnchor() => this.Fx.PlayerAnchor();
+
+        internal bool KaiokenActive => this.kaiokenTicks > 0;
+
+        internal void BeginKaioken()
+        {
+            this.kaiokenTicks = (int)(Math.Max(1f, this.Config.KaiokenSeconds) * 60f);
+            this.kaiokenHealthCarry = 0f;
+            ModEntry.Notify("KAIOKEN!");
+        }
+
+        /// <summary>Burns ki and health for as long as it holds, and ends itself if either
+        /// runs out. Health is drained through a carry so the per-tick cost stays fractional.</summary>
+        private void UpdateKaioken()
+        {
+            if (this.kaiokenTicks <= 0)
+                return;
+
+            this.kaiokenTicks--;
+
+            if (this.CurrentForm == null || this.Ki.IsExhausted)
+            {
+                this.EndKaioken("Kaioken collapses.");
+                return;
+            }
+
+            this.Ki.Drain(Math.Max(0f, this.Config.KaiokenKiPerSecond) / 60f);
+
+            this.kaiokenHealthCarry += Math.Max(0f, this.Config.KaiokenHealthPerSecond) / 60f;
+            if (this.kaiokenHealthCarry >= 1f)
+            {
+                int whole = (int)this.kaiokenHealthCarry;
+                this.kaiokenHealthCarry -= whole;
+                Game1.player.health = Math.Max(1, Game1.player.health - whole);
+            }
+
+            if (Game1.player.health <= 1)
+                this.EndKaioken("Your body gives out.");
+            else if (this.kaiokenTicks <= 0)
+                this.EndKaioken("Kaioken fades.");
+        }
+
+        private void EndKaioken(string message)
+        {
+            this.kaiokenTicks = 0;
+            this.kaiokenHealthCarry = 0f;
+            this.PlayCue("powerdown", "stoneCrack");
+            ModEntry.Notify(message);
+        }
+
+        /// <summary>The mine floor a rival should be tuned to: the unlock floor of your
+        /// strongest form plus a small margin, never more than how deep you have actually
+        /// been. This keeps ambushes at or just above your own level instead of scaling off
+        /// a single deep Skull Cavern run.</summary>
+        internal int RivalTuningLevel(int deepest)
+        {
+            int unlocked = this.UnlockedCount();
+            int formLevel = unlocked > 0
+                ? this.UnlockLevelFor(Math.Min(unlocked - 1, Transformation.All.Length - 1))
+                : 20;
+
+            int ceiling = formLevel + Math.Max(0, this.Config.RivalLevelOffset);
+            int level = Math.Min(Math.Max(20, deepest), ceiling);
+            return Math.Max(20, level);
+        }
+
+        internal bool BossFightInProgress => this.Bosses != null && this.Bosses.Active != null;
+
+        internal bool RivalActive => this.Rivals != null && this.Rivals.Active;
+
+        internal bool TechniquesActive => this.Techniques != null && this.Techniques.AnyActive;
+
+        /// <summary>Replace a buff with one that lapses immediately.</summary>
+        internal void RemoveBuffById(string id)
+        {
+            Game1.player.applyBuff(new Buff(id: id, duration: 1, effects: new BuffEffects()));
+        }
+
+        internal bool IsTechniqueUnlocked(string techniqueId)
+        {
+            return this.Bosses.IsTechniqueUnlocked(techniqueId);
+        }
+
+        internal string TechniqueName(string techniqueId)
+        {
+            return this.Techniques.NameOf(techniqueId);
+        }
+
+        internal void GrantFormUnlock(int formIndex)
+        {
+            this.Bosses.GrantFormUnlock(formIndex);
+        }
+
+        /// <summary>Called after a wish resolves: the spheres are gone, so their
+        /// guardians come back.</summary>
+        internal int SpawnWishTrial(GameLocation location, Vector2 centre, int cycle)
+        {
+            return this.Bosses.SpawnWishTrial(location, centre, cycle);
+        }
+
+        /// <summary>Trial guardians can appear anywhere, so their aura is drawn from here
+        /// rather than from the mine-only boss pass.</summary>
+        private void DrawTrialAuras(SpriteBatch b)
+        {
+            GameLocation location = Game1.currentLocation;
+            if (location == null)
+                return;
+
+            foreach (NPC npc in location.characters)
+            {
+                if (npc is Monster monster
+                    && monster.modData.ContainsKey(DragonBallManager.TrialKey))
+                {
+                    this.Fx.DrawAuraAt(b, this.Fx.MonsterAnchor(monster),
+                                       new Color(120, 240, 160), 4.2f, 0.6f,
+                                       monster.GetHashCode());
+                }
+            }
+        }
+
+        internal void OnWishGranted()
+        {
+            this.Bosses.ResetRepeatableBosses();
+        }
+
+        private void OnDayStarted(object sender, DayStartedEventArgs e)
+        {
+            this.Rivals.OnDayStarted();
+            this.Invader.OnDayStarted();
+        }
+
+        private void OnTimeChanged(object sender, TimeChangedEventArgs e)
+        {
+            this.Rivals.OnTimeChanged(e.NewTime);
+            this.Invader.OnTimeChanged(e.NewTime);
+        }
+
+        internal int SpawnRival(GameLocation location, Vector2 centre, int wishes, int depth)
+        {
+            return this.Bosses.SpawnRival(location, centre, wishes, depth);
+        }
+
+        internal int SpawnInvader(GameLocation location, Vector2 centre, int defeats)
+        {
+            return this.Bosses.SpawnInvader(location, centre, defeats);
+        }
+
+        internal int InvaderDefeats => this.Bosses != null ? this.Bosses.InvaderDefeats : 0;
+
+        internal void RecordInvaderDefeat() => this.Bosses?.RecordInvaderDefeat();
+
+        private void OnObjectListChanged(object sender, ObjectListChangedEventArgs e)
+        {
+            // only rescan when a sphere was actually placed, not on every machine tick
+            foreach (KeyValuePair<Vector2, StardewValley.Object> pair in e.Added)
+            {
+                string id = pair.Value?.ItemId;
+                if (!string.IsNullOrEmpty(id) && id.StartsWith(DragonBallManager.ItemPrefix))
+                {
+                    this.DragonBalls.CheckForSummon(e.Location);
+                    return;
+                }
+            }
+        }
+
+        // ------------------------------------------------------------ forms
+
+        private static string BuffId(Transformation form) => BuffIdPrefix + form.Id;
+
+        private void ApplyBuff(Transformation form)
+        {
+            BuffEffects effects = new BuffEffects();
+            effects.Attack.Value = form.FlatAttack;
+            effects.AttackMultiplier.Value =
+                form.AttackMultiplier - 1f
+                + this.DragonBalls.State.BonusAttackMultiplier
+                + this.Progress.State.ZenkaiAttackBonus
+                + (this.KaiokenActive ? this.Config.KaiokenAttackBonus : 0f);
+            effects.Defense.Value = form.Defense;
+            effects.Speed.Value = form.SpeedBonus
+                                  + (this.KaiokenActive ? this.Config.KaiokenSpeedBonus : 0);
+            effects.MagneticRadius.Value = 128;
+            effects.CriticalChanceMultiplier.Value = form.CritChanceBonus;
+            effects.CriticalPowerMultiplier.Value = form.CritPowerBonus;
+            effects.WeaponSpeedMultiplier.Value = form.WeaponSpeedBonus;
+
+            // show the form's mastery level (and the ki-drain discount it earns) in the
+            // buff tooltip; refreshed every tick-batch, so it climbs live while held
+            int masteryPct = (int)(this.Progress.MasteryFraction(form) * 100f);
+            int drainCut = (int)((1f - this.Progress.DrainMultiplier(form)) * 100f);
+            string masteryLine = masteryPct >= 100
+                ? "Mastery: MAX (ki drain -" + drainCut + "%)"
+                : $"Mastery: {masteryPct}% (ki drain -{drainCut}%)";
+
+            Game1.player.applyBuff(new Buff(
+                id: BuffId(form),
+                displayName: form.DisplayName,
+                description: form.Description + "\n" + masteryLine,
+                iconTexture: this.IconTexture,
+                iconSheetIndex: form.SpriteIndex,
+                duration: 3000,
+                effects: effects));
+        }
+
+        /// <summary>Replace the buff with one that lapses immediately.</summary>
+        private void RemoveBuff(Transformation form)
+        {
+            Game1.player.applyBuff(new Buff(id: BuffId(form), duration: 1, effects: new BuffEffects()));
+        }
+
+        internal void SetForm(int index)
+        {
+            if (index < 0 || index >= Transformation.All.Length || Game1.player == null)
+                return;
+
+            if (this.Ki.IsExhausted)
+            {
+                ModEntry.Notify("You have no ki left to transform.");
+                return;
+            }
+
+            Transformation form = Transformation.All[index];
+            Farmer player = Game1.player;
+
+            if (this.formIndex < 0)
+            {
+                this.savedHair = player.hair.Value;
+                this.savedHairColor = player.hairstyleColor.Value;
+            }
+            else
+            {
+                this.RemoveBuff(Transformation.All[this.formIndex]);
+            }
+
+            this.formIndex = index;
+            player.hairstyleColor.Value = Color.White;   // the sprites carry their own colours
+            player.changeHairStyle(form.HairId);
+            this.ApplyBuff(form);
+
+            this.burstTicks = 1;
+            this.PlayCue(form.SoundName, "yoba");
+            if (!this.FormIsCalm(form))
+                this.StartAuraLoop();
+            if (this.Config.ScreenFlash)
+                Game1.flashAlpha = 1f;
+            ModEntry.Notify(form.DisplayName + "!");
+        }
+
+        internal void PowerDown(bool announce)
+        {
+            if (this.formIndex < 0)
+                return;
+
+            this.RemoveBuff(Transformation.All[this.formIndex]);
+            this.formIndex = -1;
+            this.Techniques.Cancel();
+            if (this.kaiokenTicks > 0)
+                this.EndKaioken("Kaioken fades.");
+            ModEntry.StopLoop(ref this.auraCue);
+            this.PlayCue("powerdown", "stoneCrack");
+
+            Farmer player = Game1.player;
+            if (player != null && this.savedHair >= 0)
+            {
+                player.hairstyleColor.Value = this.savedHairColor;
+                player.changeHairStyle(this.savedHair);
+                this.savedHair = -1;
+            }
+
+            if (player != null && player.Stamina > player.MaxStamina)
+                player.Stamina = player.MaxStamina;
+
+            if (announce)
+                ModEntry.Notify("Powered down.");
+        }
+
+        private void Ascend()
+        {
+            int unlocked = this.UnlockedCount();
+            if (unlocked <= 0)
+            {
+                ModEntry.Notify($"Nothing stirs yet. Reach mine level {this.UnlockLevelFor(0)}.");
+                return;
+            }
+
+            int next = this.formIndex + 1;
+            if (next >= unlocked)
+                this.PowerDown(true);
+            else
+                this.SetForm(next);
+        }
+
+        // ------------------------------------------------------------ events
+
+        private void OnButtonsChanged(object sender, ButtonsChangedEventArgs e)
+        {
+            if (!Context.IsPlayerFree)
+                return;
+
+            if (this.Config.SwitchTechniqueKey.JustPressed())
+            {
+                this.Techniques.Cycle();
+                this.Helper.Input.SuppressActiveKeybinds(this.Config.SwitchTechniqueKey);
+            }
+            else if (this.Config.KamehamehaKey.JustPressed())
+            {
+                this.Techniques.TryFire(this.CurrentForm, this.formIndex);
+                this.Helper.Input.SuppressActiveKeybinds(this.Config.KamehamehaKey);
+            }
+            else if (this.Config.PowerDownKey.JustPressed())
+            {
+                this.PowerDown(true);
+                this.Helper.Input.SuppressActiveKeybinds(this.Config.PowerDownKey);
+            }
+            else if (this.Config.TransformKey.JustPressed())
+            {
+                this.Ascend();
+                this.Helper.Input.SuppressActiveKeybinds(this.Config.TransformKey);
+            }
+        }
+
+        private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
+        {
+            this.AnimTicks++;
+
+            if (this.burstTicks > 0)
+            {
+                this.burstTicks++;
+                if (this.burstTicks >= BurstLength)
+                    this.burstTicks = 0;
+            }
+
+            if (this.dodgeTicks > 0)
+            {
+                this.dodgeTicks++;
+                if (this.dodgeTicks >= DodgeFlashLength)
+                    this.dodgeTicks = 0;
+            }
+
+            if (!Context.IsWorldReady)
+                return;
+
+            // carry out a pending boss-gate bounce, then skip the rest of this tick
+            if (this.pendingGateBounce >= 0 && Context.IsPlayerFree)
+            {
+                int level = this.pendingGateBounce;
+                this.pendingGateBounce = -1;
+                ModEntry.Notify("The way down is sealed until the guardian falls.");
+                this.PlayCue("powerdown", "stoneCrack");
+                Game1.enterMine(level);
+                return;
+            }
+
+            this.Techniques.Update();
+            this.Bosses.Update();
+            this.DragonBalls.Update();
+            this.Ki.Update();
+            this.Progress.Update();
+            this.Rivals.Update();
+            this.Invader.Update();
+            this.CheckSenzu();
+            this.UpdateKaioken();
+            this.CheckNewUnlocks();
+            this.CheckDodge();
+            this.UpdateAuraSound();
+
+            // remember the floor we are on and whether its boss still seals the way down
+            if (Game1.currentLocation is MineShaft here)
+            {
+                this.lastMineLevel = here.mineLevel;
+                this.lastFloorSealed = this.Bosses.CurrentFloorSealed;
+            }
+            else
+            {
+                this.lastFloorSealed = false;
+            }
+
+            Transformation form = this.CurrentForm;
+            if (form == null)
+                return;
+
+            if (e.IsMultipleOf(30))
+                this.ApplyBuff(form);
+
+            if (this.Config.DrainStaminaWhileTransformed && Context.IsPlayerFree
+                && !this.DragonBalls.State.FreeTransformations)
+            {
+                this.Ki.Drain(form.StaminaDrainPerSecond * this.Config.StaminaDrainScale
+                              * this.Progress.DrainMultiplier(form) / 60f);
+            }
+        }
+
+        /// <summary>Ultra Instinct evasion. Implemented by refunding the damage rather than
+        /// by Harmony-patching Farmer.takeDamage: a dozen installed mods already patch around
+        /// that method, and a cancelling prefix there would skip theirs.</summary>
+        private void CheckDodge()
+        {
+            Farmer player = Game1.player;
+            if (player == null)
+                return;
+
+            int health = player.health;
+            if (this.lastHealth < 0)
+            {
+                this.lastHealth = health;
+                return;
+            }
+
+            int lost = this.lastHealth - health;
+            Transformation form = this.CurrentForm;
+
+            if (lost > 0)
+            {
+                this.Ki.InterruptCharging();
+                this.untouchedTicks = 0;
+            }
+            else
+            {
+                this.untouchedTicks++;
+            }
+
+            if (lost > 0 && form != null && form.DodgeChance > 0f
+                && this.Ki.CanAfford(this.Config.UltraInstinctDodgeEnergyCost)
+                && Game1.random.NextDouble() < this.EffectiveDodgeChance(form))
+            {
+                player.health = Math.Min(player.maxHealth, health + lost);
+                this.Ki.Spend(this.Config.UltraInstinctDodgeEnergyCost);
+                player.temporarilyInvincible = true;
+                player.temporaryInvincibilityTimer = 0;
+                player.currentTemporaryInvincibilityDuration = 700;
+
+                this.dodgeTicks = 1;
+                this.PlayCue("dodge", "swordswipe");
+                health = player.health;
+            }
+
+            this.lastHealth = health;
+        }
+
+        /// <summary>Mastered Ultra Instinct sharpens the longer you go untouched; every
+        /// other form just uses its flat chance.</summary>
+        internal float EffectiveDodgeChance(Transformation form)
+        {
+            if (form == null || form.DodgeChance <= 0f)
+                return 0f;
+            if (form.DodgeGrowth <= 0f)
+                return form.DodgeChance;
+
+            float ramp = Math.Max(1f, this.Config.MasteredDodgeRampSeconds) * 60f;
+            float t = Math.Min(1f, this.untouchedTicks / ramp);
+            return Math.Min(0.95f, form.DodgeChance + (form.DodgeGrowth * t));
+        }
+
+        /// <summary>A senzu is eaten through the normal food path, so we watch for the
+        /// eat animation holding one and top everything up when it lands.</summary>
+        private void CheckSenzu()
+        {
+            Farmer player = Game1.player;
+            Item eating = player.itemToEat;
+
+            // mark the moment a senzu is being eaten; match either id form to be safe
+            bool isSenzu = eating != null
+                && (eating.ItemId == DragonBallManager.SenzuId
+                    || eating.QualifiedItemId == "(O)" + DragonBallManager.SenzuId);
+            if (isSenzu)
+                this.senzuPending = true;
+
+            // apply the full restore once the eating animation has finished
+            if (this.senzuPending && !player.isEating && player.itemToEat == null)
+            {
+                this.senzuPending = false;
+                this.RestoreEverything();
+            }
+        }
+
+        /// <summary>Top up health, stamina and ki to full and clear exhaustion.</summary>
+        internal void RestoreEverything()
+        {
+            Game1.player.health = Game1.player.maxHealth;
+            Game1.player.Stamina = Game1.player.MaxStamina;
+            this.Ki.Fill();
+            this.PlayCue("unlock", "yoba");
+            ModEntry.Notify("Fully restored - health, energy and ki.");
+        }
+
+        /// <summary>A single legible number for everything the mod has given you.</summary>
+        internal int PowerLevel()
+        {
+            if (!Context.IsWorldReady || Game1.player == null)
+                return 0;
+
+            Transformation form = this.CurrentForm;
+            float multiplier = form?.AttackMultiplier ?? 1f;
+            multiplier += this.DragonBalls.State.BonusAttackMultiplier
+                          + this.Progress.State.ZenkaiAttackBonus;
+            if (this.KaiokenActive)
+                multiplier += this.Config.KaiokenAttackBonus;
+
+            float mastery = form != null ? 1f + (0.25f * this.Progress.MasteryFraction(form)) : 1f;
+            float basePower = 40f
+                              + (Game1.player.CombatLevel * 18f)
+                              + (this.DeepestMineLevel() * 3f)
+                              + (this.Ki.Max * 0.9f);
+
+            return (int)Math.Max(1f, basePower * multiplier * mastery);
+        }
+
+        private void CheckNewUnlocks()
+        {
+            int unlocked = this.UnlockedCount();
+            if (this.announcedUnlocks < 0)
+            {
+                this.announcedUnlocks = unlocked;
+                return;
+            }
+
+            if (unlocked <= this.announcedUnlocks)
+                return;
+
+            for (int i = this.announcedUnlocks; i < unlocked; i++)
+                ModEntry.Notify($"A new power awakens: {Transformation.All[i].DisplayName}!");
+
+            this.PlayCue("unlock", "yoba");
+            if (this.Config.ScreenFlash)
+                Game1.flashAlpha = 1f;
+            this.announcedUnlocks = unlocked;
+        }
+
+        private void OnRenderedWorld(object sender, RenderedWorldEventArgs e)
+        {
+            if (!Context.IsWorldReady || Game1.player == null || Game1.currentLocation == null)
+                return;
+            if (Game1.eventUp || Game1.farmEvent != null)
+                return;
+
+            Transformation form = this.CurrentForm;
+            bool bossVisible = this.Config.EnableBosses && Game1.currentLocation is MineShaft;
+            if (form == null && !this.Techniques.AnyActive && this.burstTicks <= 0
+                && this.dodgeTicks <= 0 && !bossVisible && !this.DragonBalls.RitualActive
+                && !this.Ki.IsCharging && !this.Progress.HasVisuals && !this.Rivals.Active
+                && !this.Invader.Active)
+            {
+                return;
+            }
+
+            SpriteBatch b = e.SpriteBatch;
+            this.Fx.BeginGlow(b);
+            try
+            {
+                if (bossVisible)
+                    this.Bosses.DrawWorld(b);
+                if (this.DragonBalls.RitualActive)
+                {
+                    this.DragonBalls.DrawWorld(b);
+                    this.DrawTrialAuras(b);
+                }
+                this.Ki.DrawWorld(b, this.Fx);
+                this.Progress.DrawGhosts(b, form);
+                if (this.Rivals.Active)
+                    this.Rivals.DrawWorld(b, this.Fx);
+                if (this.Invader.Active)
+                    this.Invader.DrawWorld(b, this.Fx);
+                this.Progress.DrawMeleeArc(b, form);
+                if (this.KaiokenActive && form != null)
+                {
+                    this.Fx.DrawAuraAt(b, this.Fx.PlayerAnchor(), new Color(255, 64, 54),
+                                       4.6f * form.AuraScale, 0.6f, 3);
+                }
+                if (this.dodgeTicks > 0)
+                    this.Fx.DrawDodge(b, this.dodgeTicks, DodgeFlashLength);
+                if (form != null)
+                {
+                    bool calm = this.FormIsCalm(form);
+                    if (this.Config.ShowAura && !calm)
+                        this.Fx.DrawAura(b, form);
+                    if (form.Lightning && this.Config.ShowLightning && !calm)
+                        this.Fx.DrawLightning(b, form);
+                    if (this.burstTicks > 0)
+                        this.Fx.DrawTransformBurst(b, form, this.burstTicks, BurstLength);
+                }
+                if (form != null)
+                    this.Techniques.Draw(b, form);
+            }
+            finally
+            {
+                this.Fx.EndGlow(b);
+            }
+        }
+
+        private void OnRenderedHud(object sender, RenderedHudEventArgs e)
+        {
+            if (!Context.IsWorldReady || Game1.eventUp)
+                return;
+            this.Bosses.DrawHud(e.SpriteBatch);
+            this.Techniques.DrawHud(e.SpriteBatch);
+            if (this.Config.ShowKiBar)
+                this.Ki.DrawHud(e.SpriteBatch);
+            if (this.Config.ShowPowerLevel)
+                this.DrawPowerLevel(e.SpriteBatch);
+        }
+
+        private void DrawPowerLevel(SpriteBatch b)
+        {
+            // sits below the bar, not above it: a number directly over the meter reads
+            // as the meter's value, which is exactly how it got mistaken for ki
+            Rectangle bar = this.Ki.HudBounds();
+            string label = $"PWR {this.PowerLevel():n0}";
+            Vector2 size = Game1.smallFont.MeasureString(label) * 0.85f;
+
+            Color colour = this.Ki.IsExhausted
+                ? new Color(240, 150, 150)
+                : this.CurrentForm?.AuraColor ?? Color.White;
+
+            Vector2 pos = new Vector2(bar.X + (bar.Width / 2f) - (size.X / 2f), bar.Bottom + 4);
+            b.DrawString(Game1.smallFont, label, pos + new Vector2(2f, 2f),
+                         new Color(30, 20, 14) * 0.8f, 0f, Vector2.Zero, 0.85f,
+                         SpriteEffects.None, 0f);
+            b.DrawString(Game1.smallFont, label, pos, colour, 0f, Vector2.Zero, 0.85f,
+                         SpriteEffects.None, 0f);
+        }
+
+        private void OnWarped(object sender, WarpedEventArgs e)
+        {
+            if (!e.IsLocalPlayer)
+                return;
+            this.Techniques.Cancel();
+
+            // no boss can be skipped: descending past a still-living boss bounces you back
+            if (this.Config.GateBossFloors && this.lastFloorSealed && this.lastMineLevel >= 0
+                && e.NewLocation is MineShaft newShaft && newShaft.mineLevel > this.lastMineLevel)
+            {
+                this.pendingGateBounce = this.lastMineLevel;
+                return;
+            }
+
+            this.Bosses.OnWarped(e.NewLocation);
+            this.Invader.OnWarped(e.NewLocation);
+        }
+
+        private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
+        {
+            this.Bosses.LoadSaveData();
+            this.DragonBalls.LoadSaveData();
+            this.Ki.LoadSaveData();
+            this.Progress.LoadSaveData();
+            this.lastHealth = Game1.player != null ? Game1.player.health : -1;
+            this.announcedUnlocks = -1;
+        }
+
+        private void OnSaving(object sender, SavingEventArgs e)
+        {
+            // never write transformation hair into the save file
+            this.PowerDown(false);
+            this.Bosses.WriteSaveData();
+            this.DragonBalls.WriteSaveData();
+            this.Ki.WriteSaveData();
+            this.Progress.WriteSaveData();
+        }
+
+        private void OnReturnedToTitle(object sender, ReturnedToTitleEventArgs e)
+        {
+            this.formIndex = -1;
+            this.savedHair = -1;
+            this.burstTicks = 0;
+            this.announcedUnlocks = -1;
+            this.Techniques.Cancel();
+            this.Bosses.Reset();
+            this.DragonBalls.Reset();
+            this.Ki.Reset();
+            this.Progress.Reset();
+            this.Rivals.Reset();
+            this.Invader.Reset();
+            this.lastMineLevel = -1;
+            this.lastFloorSealed = false;
+            this.pendingGateBounce = -1;
+            this.lastHealth = -1;
+            this.dodgeTicks = 0;
+            this.kaiokenTicks = 0;
+            this.kaiokenHealthCarry = 0f;
+            ModEntry.StopLoop(ref this.auraCue);
+        }
+
+        // ------------------------------------------------------------ console
+
+        private void OnCommand(string name, string[] args)
+        {
+            string sub = args.Length > 0 ? args[0].ToLowerInvariant() : "status";
+
+            switch (sub)
+            {
+                case "status":
+                {
+                    int unlocked = this.UnlockedCount();
+                    this.Monitor.Log($"Deepest mine level: {this.DeepestMineLevel()}", LogLevel.Info);
+                    this.Monitor.Log($"Current form: {this.CurrentForm?.DisplayName ?? "base"}", LogLevel.Info);
+                    this.Monitor.Log($"Zenkai boosts: {this.Progress.State.ZenkaiCount} "
+                                     + $"(+{this.Progress.State.ZenkaiKiBonus:0} ki, "
+                                     + $"+{this.Progress.State.ZenkaiAttackBonus:0.##} attack)",
+                                     LogLevel.Info);
+                    for (int i = 0; i < Transformation.All.Length; i++)
+                    {
+                        string state = i < unlocked ? "UNLOCKED" : $"locked (mine level {this.UnlockLevelFor(i)})";
+                        int mastery = (int)(this.Progress.MasteryFraction(Transformation.All[i]) * 100);
+                        this.Monitor.Log($"  {i + 1}. {Transformation.All[i].DisplayName}: {state}"
+                                         + (i < unlocked ? $"  mastery {mastery}%" : ""),
+                                         LogLevel.Info);
+                    }
+                    break;
+                }
+
+                case "unlock_all":
+                    this.Config.UnlockEverything = true;
+                    this.Helper.WriteConfig(this.Config);
+                    this.Monitor.Log("All transformations unlocked (saved to config.json).", LogLevel.Info);
+                    break;
+
+                case "form":
+                {
+                    if (!Context.IsWorldReady)
+                    {
+                        this.Monitor.Log("Load a save first.", LogLevel.Error);
+                        break;
+                    }
+                    if (args.Length < 2 || !int.TryParse(args[1], out int n)
+                        || n < 1 || n > Transformation.All.Length)
+                    {
+                        this.Monitor.Log($"Usage: saiyan form <1-{Transformation.All.Length}>", LogLevel.Error);
+                        break;
+                    }
+                    this.SetForm(n - 1);
+                    break;
+                }
+
+                case "off":
+                    this.PowerDown(true);
+                    break;
+
+                case "senzu":
+                    if (!Context.IsWorldReady)
+                        this.Monitor.Log("Load a save first.", LogLevel.Error);
+                    else
+                    {
+                        this.RestoreEverything();
+                        this.Monitor.Log("Restored health, stamina and ki to full.", LogLevel.Info);
+                    }
+                    break;
+
+                case "pose":
+                {
+                    if (!Context.IsWorldReady)
+                    {
+                        this.Monitor.Log("Load a save first.", LogLevel.Error);
+                        break;
+                    }
+                    if (args.Length < 2 || !int.TryParse(args[1], out int frame))
+                    {
+                        this.Monitor.Log("Usage: saiyan pose <frame index>", LogLevel.Error);
+                        break;
+                    }
+                    Game1.player.FarmerSprite.setCurrentFrame(frame);
+                    this.Monitor.Log($"Holding farmer frame {frame}. Move to clear it.",
+                                     LogLevel.Info);
+                    break;
+                }
+
+                case "bosses":
+                {
+                    foreach (BossDefinition def in BossDefinition.All)
+                    {
+                        string state = this.Bosses.IsDefeated(def) ? "DEFEATED" : "alive";
+                        string reward;
+                        switch (def.Reward)
+                        {
+                            case BossReward.Form:
+                                reward = Transformation.All[def.FormIndex].DisplayName;
+                                break;
+                            case BossReward.Technique:
+                                reward = this.TechniqueName(def.TechniqueId);
+                                break;
+                            case BossReward.Supplies:
+                                reward = "senzu cache";
+                                break;
+                            default:
+                                reward = $"{def.DragonBallNumber}-Star Dragon Ball";
+                                break;
+                        }
+                        if (!string.IsNullOrEmpty(def.BonusTechniqueId))
+                            reward += " + " + this.TechniqueName(def.BonusTechniqueId);
+                        string where = def.MineLevel > 120
+                            ? $"skull {def.MineLevel - 120,3}"
+                            : $"mine  {def.MineLevel,3}";
+                        this.Monitor.Log($"  {where}  {def.DisplayName,-32} {state,-8} -> {reward}",
+                                         LogLevel.Info);
+                    }
+                    break;
+                }
+
+                case "clearboss":
+                {
+                    if (!Context.IsWorldReady)
+                    {
+                        this.Monitor.Log("Load a save first.", LogLevel.Error);
+                        break;
+                    }
+                    MineShaft here = Game1.currentLocation as MineShaft;
+                    BossDefinition def2 = here != null
+                        ? BossDefinition.ForMineLevel(here.mineLevel)
+                        : null;
+                    if (def2 == null)
+                    {
+                        this.Monitor.Log("No boss floor here. Stand on a milestone floor and retry.",
+                                         LogLevel.Error);
+                        break;
+                    }
+                    this.Bosses.ForceClear(def2);
+                    this.Monitor.Log($"Marked {def2.DisplayName} as defeated.", LogLevel.Info);
+                    break;
+                }
+
+                default:
+                    this.Monitor.Log(
+                        "Usage: saiyan status | unlock_all | form <1-6> | off | bosses | clearboss | pose <n>",
+                        LogLevel.Error);
+                    break;
+            }
+        }
+
+        // ------------------------------------------------------------ helpers
+
+        internal static void Notify(string text)
+        {
+            Game1.addHUDMessage(new HUDMessage(text, 2));
+        }
+
+        /// <summary>Play a sound cue without letting a missing cue take the mod down.</summary>
+        internal static void SafeSound(string cue)
+        {
+            try
+            {
+                Game1.playSound(cue);
+            }
+            catch (Exception)
+            {
+                // a missing audio cue is not worth an error
+            }
+        }
+    }
+}

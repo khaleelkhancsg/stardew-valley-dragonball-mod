@@ -1,0 +1,12 @@
+# build output
+bin/
+obj/
+*.user
+
+# per-user config generated at runtime
+config.json
+
+# dev-only scratch: temp art experiments and generated previews
+tools/_*.png
+tools/preview_*.png
+tools/artboard.png
