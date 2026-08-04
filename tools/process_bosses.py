@@ -43,6 +43,14 @@ MAP = {
  # invader excluded: dark-on-dark source does not key cleanly; keeps its placeholder
 }
 ROWS = {"GreenSlime":7,"SquidKid":4,"ShadowBrute":8,"Mummy":5}
+# Sources whose "RIGHT SIDE" row is already drawn facing RIGHT (tail/hair trails left).
+# For these the right output row is the source as-is and the LEFT row is mirrored; every
+# other source faces left, so its right row is the one that gets mirrored. Determined by
+# inspecting each source side frame.
+FACES_RIGHT = {"saibamen","nappa","jeice","captainginyu","coolerfirst","destroyer",
+               "broly","celljr","cellimperfect","cellperfect","metalcooler","guldo",
+               "friezafirst","cellsemiperfect","bojack","dabura","coolerfinal","superbuu",
+               "invader"}
 # Standard 4-direction layout: down, right, up, left. The left row is the right-side art
 # mirrored, so a monster that reads a dedicated left row shows a correctly-facing profile
 # instead of missing/duplicated frames (bosses that "could only turn one way").
@@ -129,13 +137,17 @@ def build(name, kind, fw, fh, rows):
     Wmax = max(im.width for im in used); Hmax = max(im.height for im in used)
     scale = min((fh-1)/Hmax, (fw-2)/Wmax)
     sheet = Image.new("RGBA", (4*fw, nrows*fh), (0,0,0,0))
+    faces_right = name in FACES_RIGHT
     for row in range(nrows):
         facing = ROW_FACING[row % len(ROW_FACING)]
-        # The source "RIGHT SIDE" row is drawn facing LEFT (the character's right side is
-        # shown). The game reads row 1 for AnimateRight and row 3 for AnimateLeft as dedicated
-        # rows (no auto-flip), so the RIGHT row must be the source mirrored to face right, and
-        # the LEFT row is the source in its natural left-facing orientation.
-        flip = facing == 1            # right = the left-facing source art, mirrored
+        # The game reads row 1 for AnimateRight and row 3 for AnimateLeft as dedicated rows
+        # (no auto-flip). The right row must face right and the left row must face left. Most
+        # sources draw their side row facing left, so the right row is the mirror; sources in
+        # FACES_RIGHT already face right, so there the left row is the mirror instead.
+        if faces_right:
+            flip = facing == 3        # source faces right: mirror the LEFT row
+        else:
+            flip = facing == 1        # source faces left: mirror the RIGHT row
         src_facing = 1 if facing == 3 else facing
         frames = facings.get(src_facing) or facings.get(2) or []
         for col in range(4):
