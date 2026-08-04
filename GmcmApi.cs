@@ -26,5 +26,11 @@ namespace SaiyanTransformations
 
         void AddKeybindList(IManifest mod, Func<KeybindList> getValue, Action<KeybindList> setValue,
             Func<string> name, Func<string> tooltip = null, string fieldId = null);
+
+        void AddTextOption(IManifest mod, Func<string> getValue, Action<string> setValue,
+            Func<string> name, Func<string> tooltip = null, string[] allowedValues = null,
+            Func<string, string> formatAllowedValue = null, string fieldId = null);
+
+        void AddParagraph(IManifest mod, Func<string> text);
     }
 }

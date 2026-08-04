@@ -58,6 +58,14 @@ namespace SaiyanTransformations
 
         public float AuraScale;
 
+        /// <summary>Per-form passive: health restored per second while this form is held.
+        /// Scales up with the form, so deeper forms sustain you harder.</summary>
+        public float HealthRegenPerSecond;
+
+        /// <summary>Short passive tagline shown on the form's buff, so each form reads as
+        /// having its own identity beyond raw numbers.</summary>
+        public string Passive;
+
         public static readonly Transformation[] All =
         {
             new Transformation
@@ -69,6 +77,7 @@ namespace SaiyanTransformations
                 AttackMultiplier = 1.5f, FlatAttack = 5, SpeedBonus = 1, EnergyMultiplier = 1.25f,
                 Defense = 2, CritChanceBonus = 0.10f, CritPowerBonus = 0.15f, WeaponSpeedBonus = 0.15f,
                 StaminaDrainPerSecond = 0.20f, KamehamehaMultiplier = 1.0f,
+                HealthRegenPerSecond = 0.2f, Passive = "Steady regeneration, balanced power.",
                 Lightning = false, AuraScale = 1.00f
             },
             new Transformation
@@ -80,6 +89,7 @@ namespace SaiyanTransformations
                 AttackMultiplier = 2.0f, FlatAttack = 10, SpeedBonus = 2, EnergyMultiplier = 1.5f,
                 Defense = 4, CritChanceBonus = 0.15f, CritPowerBonus = 0.25f, WeaponSpeedBonus = 0.25f,
                 StaminaDrainPerSecond = 0.35f, KamehamehaMultiplier = 1.4f,
+                HealthRegenPerSecond = 0.3f, Passive = "Sharper crits and quicker swings.",
                 Lightning = true, AuraScale = 1.05f
             },
             new Transformation
@@ -91,6 +101,7 @@ namespace SaiyanTransformations
                 AttackMultiplier = 3.0f, FlatAttack = 18, SpeedBonus = 3, EnergyMultiplier = 1.75f,
                 Defense = 6, CritChanceBonus = 0.20f, CritPowerBonus = 0.35f, WeaponSpeedBonus = 0.35f,
                 StaminaDrainPerSecond = 0.90f, KamehamehaMultiplier = 1.9f,
+                HealthRegenPerSecond = 0.5f, Passive = "Overwhelming power at a steep ki cost.",
                 Lightning = true, AuraScale = 1.15f
             },
             new Transformation
@@ -102,6 +113,7 @@ namespace SaiyanTransformations
                 AttackMultiplier = 4.0f, FlatAttack = 26, SpeedBonus = 4, EnergyMultiplier = 2.0f,
                 Defense = 9, CritChanceBonus = 0.25f, CritPowerBonus = 0.45f, WeaponSpeedBonus = 0.40f,
                 StaminaDrainPerSecond = 0.50f, KamehamehaMultiplier = 2.5f,
+                HealthRegenPerSecond = 0.8f, Passive = "Divine durability and regeneration.",
                 Lightning = false, AuraScale = 1.10f
             },
             new Transformation
@@ -113,6 +125,7 @@ namespace SaiyanTransformations
                 AttackMultiplier = 5.5f, FlatAttack = 36, SpeedBonus = 5, EnergyMultiplier = 2.5f,
                 Defense = 12, CritChanceBonus = 0.30f, CritPowerBonus = 0.60f, WeaponSpeedBonus = 0.45f,
                 StaminaDrainPerSecond = 0.75f, KamehamehaMultiplier = 3.2f,
+                HealthRegenPerSecond = 1.0f, Passive = "God ki under control; strong all round.",
                 Lightning = true, AuraScale = 1.15f
             },
             new Transformation
@@ -124,6 +137,7 @@ namespace SaiyanTransformations
                 AttackMultiplier = 8.0f, FlatAttack = 50, SpeedBonus = 6, EnergyMultiplier = 3.0f,
                 Defense = 16, CritChanceBonus = 0.40f, CritPowerBonus = 0.85f, WeaponSpeedBonus = 0.55f,
                 StaminaDrainPerSecond = 1.75f, KamehamehaMultiplier = 4.5f,
+                HealthRegenPerSecond = 1.3f, Passive = "The body dodges half of all hits on its own.",
                 DodgeChance = 0.5f, Lightning = true, AuraScale = 1.25f
             },
             new Transformation
@@ -137,6 +151,7 @@ namespace SaiyanTransformations
                 AttackMultiplier = 12f, FlatAttack = 70, SpeedBonus = 7, EnergyMultiplier = 3.5f,
                 Defense = 22, CritChanceBonus = 0.5f, CritPowerBonus = 1.1f, WeaponSpeedBonus = 0.65f,
                 StaminaDrainPerSecond = 2.4f, KamehamehaMultiplier = 6f,
+                HealthRegenPerSecond = 1.8f, Passive = "Evasion climbs the longer you go untouched.",
                 DodgeChance = 0.55f, DodgeGrowth = 0.3f,
                 Lightning = true, AuraScale = 1.35f
             }

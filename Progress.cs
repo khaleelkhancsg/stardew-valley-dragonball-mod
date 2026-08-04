@@ -42,6 +42,9 @@ namespace SaiyanTransformations
         private int meleeFlashTicks;
         private int meleeFacing;
 
+        // per-form passive health regen carries a fractional remainder between ticks
+        private float healthRegenAcc;
+
         private readonly HashSet<string> announcedMastery = new HashSet<string>();
 
         private struct Ghost
@@ -79,6 +82,7 @@ namespace SaiyanTransformations
             this.zenkaiPending = false;
             this.wasSwinging = false;
             this.meleeFlashTicks = 0;
+            this.healthRegenAcc = 0f;
             this.announcedMastery.Clear();
         }
 
@@ -110,6 +114,43 @@ namespace SaiyanTransformations
         {
             float reduction = MathHelper.Clamp(Owner.Config.MasteryMaxDrainReduction, 0f, 0.9f);
             return 1f - (reduction * this.MasteryFraction(form));
+        }
+
+        /// <summary>Total mastery across all forms, each counted by how far it is mastered
+        /// (0-1). Fully mastering every form gives Transformation.All.Length. This is the
+        /// currency behind the carryover bonuses: they stack, and partial mastery pays out
+        /// proportionally, so mastering many forms is always worth it.</summary>
+        private float TotalMasteryWeight()
+        {
+            float sum = 0f;
+            foreach (Transformation f in Transformation.All)
+                sum += this.MasteryFraction(f);
+            return sum;
+        }
+
+        /// <summary>Attack-multiplier bonus that mastery grants in EVERY form (and stacks with
+        /// the form you are actually in). 0.15 per fully-mastered form by default.</summary>
+        public float MasteryGlobalAttackBonus()
+        {
+            return Owner.Config.EnableMasteryBonuses
+                ? this.TotalMasteryWeight() * Math.Max(0f, Owner.Config.MasteryAttackBonusPerForm)
+                : 0f;
+        }
+
+        /// <summary>Flat defense that mastery grants in every form.</summary>
+        public int MasteryGlobalDefenseBonus()
+        {
+            return Owner.Config.EnableMasteryBonuses
+                ? (int)(this.TotalMasteryWeight() * Math.Max(0, Owner.Config.MasteryDefenseBonusPerForm))
+                : 0;
+        }
+
+        /// <summary>Max-ki bonus that mastery grants at all times.</summary>
+        public float MasteryGlobalKiBonus()
+        {
+            return Owner.Config.EnableMasteryBonuses
+                ? this.TotalMasteryWeight() * Math.Max(0f, Owner.Config.MasteryKiBonusPerForm)
+                : 0f;
         }
 
         /// <summary>A permanent power gain handed out by a boss "power cache". It rides the
@@ -144,6 +185,26 @@ namespace SaiyanTransformations
                         Owner.PlayCue("unlock", "yoba");
                     }
                 }
+            }
+        }
+
+        /// <summary>Per-form passive: bleed health back while the form is held. Fractional
+        /// amounts are carried between ticks so even small rates heal over time.</summary>
+        private void UpdateFormRegen(Transformation form)
+        {
+            if (form == null || form.HealthRegenPerSecond <= 0f || !Context.IsPlayerFree)
+                return;
+
+            Farmer p = Game1.player;
+            if (p == null || p.health >= p.maxHealth)
+                return;
+
+            this.healthRegenAcc += form.HealthRegenPerSecond / 60f;
+            if (this.healthRegenAcc >= 1f)
+            {
+                int heal = (int)this.healthRegenAcc;
+                this.healthRegenAcc -= heal;
+                p.health = Math.Min(p.maxHealth, p.health + heal);
             }
         }
 
@@ -338,6 +399,7 @@ namespace SaiyanTransformations
             if (form != null && Context.IsPlayerFree)
                 this.AccumulateMastery(form, 1f / 60f);
 
+            this.UpdateFormRegen(form);
             this.UpdateZenkai();
             this.UpdateMelee(form);
             this.UpdateGhosts(form);

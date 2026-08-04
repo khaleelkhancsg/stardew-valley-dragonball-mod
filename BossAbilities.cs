@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewValley;
+using StardewValley.Buffs;
 using StardewValley.Monsters;
 
 namespace SaiyanTransformations
@@ -38,6 +39,23 @@ namespace SaiyanTransformations
         // how many ticks after a boom/beam fires it keeps trying to connect
         private const int AoeHitWindow = 4;
 
+        // ---- signature moves ----
+        private const int DeathBallCooldown = 460;   // ~7.7s
+        private const int DeathBallTelegraph = 55;   // long wind-up: you can run out of it
+        private const int DeathBallTotal = 82;
+        private const float DeathBallRadius = 260f;
+
+        private const int AbsorbCooldown = 300;      // ~5s
+        private const float AbsorbRange = 6f * 64f;
+        private const float AbsorbKi = 24f;
+
+        private const int CandyBeamCooldown = 360;   // ~6s
+        private const int CandyDebuffMs = 6000;
+
+        private const int TimeStopCooldown = 560;    // ~9.3s
+        private const int TimeStopMs = 1400;
+        private const float TimeStopRange = 9f * 64f;
+
         /// <summary>modData key a boss carries once a phase grants it an extra ability.</summary>
         public const string PhaseAbilityKey = "khaleelkhan.SaiyanTransformations/phaseability";
 
@@ -59,6 +77,8 @@ namespace SaiyanTransformations
             public Color Colour;
             public bool Hit;
             public bool Done;
+            public bool Reflected;   // orb parried back: now damages monsters, not the player
+            public bool Candy;       // beam applies Buu's weaken/slow debuff instead of raw damage
         }
 
         private sealed class MState
@@ -71,6 +91,10 @@ namespace SaiyanTransformations
             public bool Rushing;
             public int ParalyzeCd;
             public int ShockCd;
+            public int DeathBallCd;
+            public int AbsorbCd;
+            public int CandyCd;
+            public int TimeStopCd;
             public float RegenAcc;
             public bool SelfDestruct;
             public int SelfDestructDamage;
@@ -170,6 +194,10 @@ namespace SaiyanTransformations
                     RushCd = Game1.random.Next(RushCooldown),
                     ParalyzeCd = Game1.random.Next(ParalyzeCooldown),
                     ShockCd = Game1.random.Next(ShockCooldown),
+                    DeathBallCd = Game1.random.Next(DeathBallCooldown),
+                    AbsorbCd = Game1.random.Next(AbsorbCooldown),
+                    CandyCd = Game1.random.Next(CandyBeamCooldown),
+                    TimeStopCd = Game1.random.Next(TimeStopCooldown),
                     SelfDestruct = def.Abilities.HasFlag(BossAbility.SelfDestruct),
                     SelfDestructDamage = def.Abilities.HasFlag(BossAbility.SelfDestruct)
                         ? this.Scaled(def, 1.6f) : 0
@@ -218,6 +246,155 @@ namespace SaiyanTransformations
             {
                 st.ShockCd = ShockCooldown;
                 this.SpawnWave(def, st.LastCentre);
+            }
+
+            // ---- signature moves ----
+            if (abilities.HasFlag(BossAbility.DeathBall) && --st.DeathBallCd <= 0)
+            {
+                st.DeathBallCd = DeathBallCooldown;
+                this.FireDeathBall(def, target);
+            }
+
+            if (abilities.HasFlag(BossAbility.Absorb) && --st.AbsorbCd <= 0)
+            {
+                st.AbsorbCd = AbsorbCooldown;
+                this.DoAbsorb(monster, def);
+            }
+
+            if (abilities.HasFlag(BossAbility.CandyBeam) && --st.CandyCd <= 0)
+            {
+                st.CandyCd = CandyBeamCooldown;
+                if (!this.AnyActive(Kind.Beam))
+                    this.FireCandyBeam(def, st.LastCentre, target);
+            }
+
+            if (abilities.HasFlag(BossAbility.TimeStop) && --st.TimeStopCd <= 0)
+            {
+                st.TimeStopCd = TimeStopCooldown;
+                this.DoTimeStop(monster, def);
+            }
+        }
+
+        // ------------------------------------------------------------- signature moves
+
+        /// <summary>Frieza's Death Ball: a huge sphere dropped on where you stand, with a long
+        /// wind-up (a big red danger ring) so it can be out-run, and a brutal hit if it lands.</summary>
+        private void FireDeathBall(BossDefinition def, Vector2 target)
+        {
+            this.hazards.Add(new Hazard
+            {
+                Kind = Kind.Boom, Pos = target, HalfWidth = DeathBallRadius,
+                Telegraph = DeathBallTelegraph, Total = DeathBallTotal, Timer = 0,
+                Damage = this.Scaled(def, 2.2f),
+                Colour = new Color(206, 120, 255)
+            });
+            Owner.PlayCue("kame_charge", "flameSpell");
+        }
+
+        /// <summary>Cell's absorption: from range it siphons the player's ki and heals itself,
+        /// punishing you for hanging back and topping the fight back up.</summary>
+        private void DoAbsorb(Monster monster, BossDefinition def)
+        {
+            Farmer p = Game1.player;
+            if (p == null)
+                return;
+            if (Vector2.Distance(Centre(monster), Centre(p)) > AbsorbRange)
+                return;
+
+            Owner.Ki.Drain(AbsorbKi);
+            int heal = Math.Max(1, (int)(monster.MaxHealth * 0.05f));
+            monster.Health = Math.Min(monster.MaxHealth, monster.Health + heal);
+            Owner.PlayCue("kame_charge", "flameSpell");
+            if (Owner.Config.ScreenFlash)
+                Game1.flashAlpha = 0.15f;
+            ModEntry.Notify("It drains your ki!");
+        }
+
+        /// <summary>Buu's candy beam: a telegraphed line that, on hit, weakens and slows you
+        /// for a while rather than dealing heavy damage - a threat you must side-step.</summary>
+        private void FireCandyBeam(BossDefinition def, Vector2 origin, Vector2 target)
+        {
+            Vector2 dir = target - origin;
+            float angle = (float)Math.Atan2(dir.Y, dir.X);
+            this.hazards.Add(new Hazard
+            {
+                Kind = Kind.Beam, Pos = origin, Angle = angle, Length = 12 * 64f, HalfWidth = 40f,
+                Timer = 0, Damage = this.Scaled(def, 0.6f), Candy = true,
+                Colour = new Color(255, 150, 220)
+            });
+            Owner.PlayCue("kame_charge", "flameSpell");
+        }
+
+        private void ApplyCandyDebuff()
+        {
+            Farmer p = Game1.player;
+            if (p == null)
+                return;
+            BuffEffects effects = new BuffEffects();
+            effects.Speed.Value = -2;
+            effects.AttackMultiplier.Value = -0.3f;
+            effects.WeaponSpeedMultiplier.Value = -0.3f;
+            p.applyBuff(new Buff(
+                id: "khaleelkhan.SaiyanTransformations.Candy",
+                displayName: "Turned to Candy",
+                description: "Weakened and slowed by Buu's beam.",
+                duration: CandyDebuffMs,
+                effects: effects));
+        }
+
+        /// <summary>Guldo's time-stop: freezes you where you stand, blinks in beside you and
+        /// lands a free hit while you cannot act.</summary>
+        private void DoTimeStop(Monster monster, BossDefinition def)
+        {
+            Farmer p = Game1.player;
+            if (p == null || p.freezePause > 0f)
+                return;
+            if (Vector2.Distance(Centre(monster), Centre(p)) > TimeStopRange)
+                return;
+
+            p.freezePause = TimeStopMs;
+            this.Blink(monster);
+            Owner.PlayCue("dodge", "wand");
+            if (Owner.Config.ScreenFlash)
+                Game1.flashAlpha = 0.25f;
+            ModEntry.Notify("Time stops!");
+            this.HitPlayerForce(this.Scaled(def, 1.1f));
+        }
+
+        /// <summary>Turn every boss ki blast in flight into a player-owned projectile that
+        /// homes back the way it came, and let out a counter-burst around the player. The
+        /// payoff for a well-timed parry.</summary>
+        public void ReflectOrbs(Vector2 playerCentre)
+        {
+            foreach (Hazard h in this.hazards)
+            {
+                if (h.Kind != Kind.Orb || h.Done || h.Reflected)
+                    continue;
+                h.Reflected = true;
+                h.Hit = false;
+                h.Life = Math.Max(h.Life, 90);
+
+                Vector2 dir = h.Pos - playerCentre;
+                if (dir.LengthSquared() < 1f)
+                    dir = -h.Vel;
+                if (dir.LengthSquared() < 1f)
+                    dir = new Vector2(0f, -1f);
+                dir.Normalize();
+                float speed = h.Vel.Length();
+                if (speed < 6f)
+                    speed = 9f;
+                h.Vel = dir * speed;
+                h.Colour = Color.Lerp(h.Colour, Color.White, 0.5f);
+            }
+
+            // a counter-burst so a parry always bites, even with nothing to reflect
+            GameLocation loc = Game1.currentLocation;
+            if (loc != null)
+            {
+                int cb = 30 + (Game1.player.CombatLevel * 10);
+                Rectangle burst = new Rectangle((int)playerCentre.X - 112, (int)playerCentre.Y - 112,
+                                                224, 224);
+                loc.damageMonster(burst, cb, cb * 2, false, Game1.player);
             }
         }
 
@@ -402,7 +579,21 @@ namespace SaiyanTransformations
                     case Kind.Orb:
                         h.Pos += h.Vel;
                         h.Life--;
-                        if (!h.Hit && Vector2.Distance(h.Pos, player) <= h.HalfWidth)
+                        if (h.Reflected)
+                        {
+                            // parried back: this orb now hunts monsters instead of the player
+                            Rectangle area = new Rectangle(
+                                (int)(h.Pos.X - h.HalfWidth), (int)(h.Pos.Y - h.HalfWidth),
+                                (int)(h.HalfWidth * 2f), (int)(h.HalfWidth * 2f));
+                            if (!h.Hit && Game1.currentLocation != null
+                                && Game1.currentLocation.damageMonster(
+                                       area, h.Damage, h.Damage + 1, false, Game1.player))
+                            {
+                                h.Hit = true;
+                                h.Done = true;
+                            }
+                        }
+                        else if (!h.Hit && Vector2.Distance(h.Pos, player) <= h.HalfWidth)
                         {
                             this.HitPlayer(h.Damage);
                             h.Hit = true;
@@ -422,6 +613,8 @@ namespace SaiyanTransformations
                             && !h.Hit && this.InCorridor(h, player))
                         {
                             this.HitPlayerForce(h.Damage);
+                            if (h.Candy)
+                                this.ApplyCandyDebuff();
                             h.Hit = true;
                         }
                         if (h.Timer >= BeamTelegraph + BeamFire)

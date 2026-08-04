@@ -81,6 +81,7 @@ namespace SaiyanTransformations
         private int dashFlashTicks;
         private bool blocking;
         private int blockFlashTicks;
+        private int parryWindowTicks;
 
         internal Transformation CurrentForm =>
             this.formIndex >= 0 && this.formIndex < Transformation.All.Length
@@ -169,6 +170,15 @@ namespace SaiyanTransformations
             gmcm.AddBoolOption(m, () => this.Config.EnableBlock, v => this.Config.EnableBlock = v, () => "Enable block");
             gmcm.AddNumberOption(m, () => this.Config.BlockDamageReduction, v => this.Config.BlockDamageReduction = v, () => "Block damage reduction", null, 0f, 0.95f, 0.05f);
             gmcm.AddNumberOption(m, () => this.Config.BlockKiPerSecond, v => this.Config.BlockKiPerSecond = v, () => "Block ki / second", null, 0f, 50f, 1f);
+            gmcm.AddBoolOption(m, () => this.Config.EnableParry, v => this.Config.EnableParry = v, () => "Enable parry (perfect block)");
+            gmcm.AddNumberOption(m, () => this.Config.ParryWindowMs, v => this.Config.ParryWindowMs = v, () => "Parry window (ms)", null, 60, 600, 10);
+            gmcm.AddBoolOption(m, () => this.Config.ParryReflect, v => this.Config.ParryReflect = v, () => "Parry deflects ki blasts");
+
+            gmcm.AddSectionTitle(m, () => "Mastery & passives");
+            gmcm.AddBoolOption(m, () => this.Config.EnableMasteryBonuses, v => this.Config.EnableMasteryBonuses = v, () => "Mastery carries over to all forms");
+            gmcm.AddNumberOption(m, () => this.Config.MasteryAttackBonusPerForm, v => this.Config.MasteryAttackBonusPerForm = v, () => "Attack bonus per mastered form", null, 0f, 0.5f, 0.05f);
+            gmcm.AddNumberOption(m, () => this.Config.MasteryDefenseBonusPerForm, v => this.Config.MasteryDefenseBonusPerForm = v, () => "Defense bonus per mastered form", null, 0, 20, 1);
+            gmcm.AddNumberOption(m, () => this.Config.MasteryKiBonusPerForm, v => this.Config.MasteryKiBonusPerForm = v, () => "Max ki per mastered form", null, 0f, 60f, 5f);
 
             gmcm.AddSectionTitle(m, () => "Bosses");
             gmcm.AddBoolOption(m, () => this.Config.EnableBosses, v => this.Config.EnableBosses = v, () => "Enable bosses");
@@ -180,6 +190,11 @@ namespace SaiyanTransformations
             gmcm.AddNumberOption(m, () => this.Config.BossAbilityDamageScale, v => this.Config.BossAbilityDamageScale = v, () => "Boss ability damage x", null, 0f, 5f, 0.1f);
 
             gmcm.AddSectionTitle(m, () => "Difficulty");
+            gmcm.AddTextOption(m, () => this.Config.DifficultyPreset,
+                v => { if (v != this.Config.DifficultyPreset) { this.Config.DifficultyPreset = v; this.ApplyDifficultyPreset(v); } },
+                () => "Preset (sets the dials below)", null,
+                new[] { "Story", "Normal", "Hard", "Brutal", "Custom" });
+            gmcm.AddParagraph(m, () => "Pick a preset to set boss health/damage in one click, then reopen this page to see the values. Choose Custom to tune them yourself.");
             gmcm.AddNumberOption(m, () => this.Config.BossHealthScale, v => this.Config.BossHealthScale = v, () => "Boss health x", null, 0.25f, 5f, 0.25f);
             gmcm.AddNumberOption(m, () => this.Config.BossDamageScale, v => this.Config.BossDamageScale = v, () => "Boss damage x", null, 0.25f, 5f, 0.25f);
             gmcm.AddBoolOption(m, () => this.Config.DrainStaminaWhileTransformed, v => this.Config.DrainStaminaWhileTransformed = v, () => "Ki drains while transformed");
@@ -196,6 +211,44 @@ namespace SaiyanTransformations
             gmcm.AddBoolOption(m, () => this.Config.ShowKiBar, v => this.Config.ShowKiBar = v, () => "Show ki bar");
             gmcm.AddBoolOption(m, () => this.Config.ShowPowerLevel, v => this.Config.ShowPowerLevel = v, () => "Show power level");
             gmcm.AddBoolOption(m, () => this.Config.ScreenFlash, v => this.Config.ScreenFlash = v, () => "Screen flash");
+        }
+
+        /// <summary>Apply a one-click difficulty preset by overwriting the boss scaling dials.
+        /// Bosses are already tuned upward in code for the mastery-carryover power gains, so
+        /// "Normal" leaves the scales at 1.0; the others scale from that baseline. "Custom"
+        /// changes nothing, leaving whatever the player has set by hand.</summary>
+        private void ApplyDifficultyPreset(string preset)
+        {
+            switch ((preset ?? "").Trim().ToLowerInvariant())
+            {
+                case "story":
+                    this.Config.BossHealthScale = 0.6f;
+                    this.Config.BossDamageScale = 0.5f;
+                    this.Config.BossAbilityDamageScale = 0.6f;
+                    this.Config.StaminaDrainScale = 0.5f;
+                    break;
+                case "normal":
+                    this.Config.BossHealthScale = 1.0f;
+                    this.Config.BossDamageScale = 1.0f;
+                    this.Config.BossAbilityDamageScale = 1.0f;
+                    this.Config.StaminaDrainScale = 1.0f;
+                    break;
+                case "hard":
+                    this.Config.BossHealthScale = 1.6f;
+                    this.Config.BossDamageScale = 1.4f;
+                    this.Config.BossAbilityDamageScale = 1.4f;
+                    this.Config.StaminaDrainScale = 1.15f;
+                    break;
+                case "brutal":
+                    this.Config.BossHealthScale = 2.4f;
+                    this.Config.BossDamageScale = 1.9f;
+                    this.Config.BossAbilityDamageScale = 1.8f;
+                    this.Config.StaminaDrainScale = 1.3f;
+                    break;
+                // "custom": leave every dial exactly as the player set it
+            }
+
+            this.Helper.WriteConfig(this.Config);
         }
 
         private void OnAssetRequested(object sender, AssetRequestedEventArgs e)
@@ -588,8 +641,9 @@ namespace SaiyanTransformations
                 form.AttackMultiplier - 1f
                 + this.DragonBalls.State.BonusAttackMultiplier
                 + this.Progress.State.ZenkaiAttackBonus
+                + this.Progress.MasteryGlobalAttackBonus()
                 + (this.KaiokenActive ? this.Config.KaiokenAttackBonus : 0f);
-            effects.Defense.Value = form.Defense;
+            effects.Defense.Value = form.Defense + this.Progress.MasteryGlobalDefenseBonus();
             effects.Speed.Value = form.SpeedBonus
                                   + (this.KaiokenActive ? this.Config.KaiokenSpeedBonus : 0);
             effects.MagneticRadius.Value = 128;
@@ -605,10 +659,21 @@ namespace SaiyanTransformations
                 ? "Mastery: MAX (ki drain -" + drainCut + "%)"
                 : $"Mastery: {masteryPct}% (ki drain -{drainCut}%)";
 
+            // the stacking bonus every mastered form grants in this (and every) form
+            int carryAtk = (int)Math.Round(this.Progress.MasteryGlobalAttackBonus() * 100f);
+            string carryLine = carryAtk > 0
+                ? $"Mastery bonus (all forms): +{carryAtk}% attack, +{this.Progress.MasteryGlobalDefenseBonus()} def"
+                : null;
+
+            string description = form.Description
+                                 + (string.IsNullOrEmpty(form.Passive) ? "" : "\nPassive: " + form.Passive)
+                                 + "\n" + masteryLine
+                                 + (carryLine != null ? "\n" + carryLine : "");
+
             Game1.player.applyBuff(new Buff(
                 id: BuffId(form),
                 displayName: form.DisplayName,
-                description: form.Description + "\n" + masteryLine,
+                description: description,
                 iconTexture: this.IconTexture,
                 iconSheetIndex: form.SpriteIndex,
                 duration: 3000,
@@ -770,7 +835,7 @@ namespace SaiyanTransformations
             {
                 int level = this.pendingGateBounce;
                 this.pendingGateBounce = -1;
-                ModEntry.Notify("The way down is sealed until the guardian falls.");
+                ModEntry.Notify("There is no escape until the boss falls.");
                 this.PlayCue("powerdown", "stoneCrack");
                 Game1.enterMine(level);
                 return;
@@ -843,6 +908,31 @@ namespace SaiyanTransformations
             else
             {
                 this.untouchedTicks++;
+            }
+
+            // a perfectly-timed guard negates the whole hit, costs no ki, and grants a beat
+            // of invincibility - plus it deflects the boss's ki blasts and counter-bursts
+            if (lost > 0 && this.Config.EnableParry && this.parryWindowTicks > 0)
+            {
+                player.health = Math.Min(player.maxHealth, health + lost);
+                health = player.health;
+                lost = 0;
+                this.parryWindowTicks = 0;
+                this.blockFlashTicks = 1;
+                player.temporarilyInvincible = true;
+                player.temporaryInvincibilityTimer = 0;
+                player.currentTemporaryInvincibilityDuration = 600;
+                this.PlayCue("dodge", "crystal");
+                if (this.Config.ScreenFlash)
+                    Game1.flashAlpha = 0.25f;
+                ModEntry.Notify("Parry!");
+                if (this.Config.ParryReflect)
+                {
+                    Rectangle box = player.GetBoundingBox();
+                    this.Bosses.ReflectBossOrbs(new Vector2(box.Center.X, box.Center.Y));
+                }
+                this.lastHealth = health;
+                return;
             }
 
             // a held guard soaks most of the hit, at the cost of ki
@@ -973,8 +1063,17 @@ namespace SaiyanTransformations
         /// <summary>Refresh the held-guard state each tick and bleed ki while it is up.</summary>
         private void UpdateBlock()
         {
+            if (this.parryWindowTicks > 0)
+                this.parryWindowTicks--;
+
             bool held = this.Config.EnableBlock && Context.IsPlayerFree && !this.Ki.IsExhausted
                         && this.KeyDown(this.Config.BlockKey) && this.Ki.Current > 0.5f;
+
+            // raising the guard opens a brief parry window: a hit landing inside it is a
+            // perfect block rather than a soaked one
+            if (held && !this.blocking && this.Config.EnableParry)
+                this.parryWindowTicks = Math.Max(1, this.Config.ParryWindowMs * 60 / 1000);
+
             if (held)
             {
                 this.Ki.Drain(Math.Max(0f, this.Config.BlockKiPerSecond) / 60f);
@@ -1011,15 +1110,20 @@ namespace SaiyanTransformations
             Farmer player = Game1.player;
             Item eating = player.itemToEat;
 
-            // mark the moment a senzu is being eaten; match either id form to be safe
+            // arm the restore while the eating animation is actually running; match either
+            // id form to be safe. Requiring isEating here means we latch onto a real bite,
+            // not a stray frame where itemToEat is briefly the senzu.
             bool isSenzu = eating != null
                 && (eating.ItemId == DragonBallManager.SenzuId
                     || eating.QualifiedItemId == "(O)" + DragonBallManager.SenzuId);
-            if (isSenzu)
+            if (isSenzu && player.isEating)
                 this.senzuPending = true;
 
-            // apply the full restore once the eating animation has finished
-            if (this.senzuPending && !player.isEating && player.itemToEat == null)
+            // fire the full restore on the falling edge of the eat animation. Keying off
+            // isEating alone (rather than also demanding itemToEat==null on the same tick)
+            // makes this fire reliably - the old dual condition could miss its window and
+            // leave the player with only the bean's vanilla edibility and no ki refill.
+            if (this.senzuPending && !player.isEating)
             {
                 this.senzuPending = false;
                 this.RestoreEverything();
@@ -1045,7 +1149,8 @@ namespace SaiyanTransformations
             Transformation form = this.CurrentForm;
             float multiplier = form?.AttackMultiplier ?? 1f;
             multiplier += this.DragonBalls.State.BonusAttackMultiplier
-                          + this.Progress.State.ZenkaiAttackBonus;
+                          + this.Progress.State.ZenkaiAttackBonus
+                          + this.Progress.MasteryGlobalAttackBonus();
             if (this.KaiokenActive)
                 multiplier += this.Config.KaiokenAttackBonus;
 
@@ -1210,12 +1315,20 @@ namespace SaiyanTransformations
                 return;
             this.Techniques.Cancel();
 
-            // no boss can be skipped: descending past a still-living boss bounces you back
+            // once a boss is engaged on your floor you are locked in until it falls: no
+            // ladder up or down, no elevator, no warp totem out. (Skipping OVER a boss
+            // floor you never actually set foot on - e.g. an elevator jump past it - is
+            // still allowed; the seal only applies once you are standing on the floor.)
+            // Dying is exempt so a defeat can still warp you out.
             if (this.Config.GateBossFloors && this.lastFloorSealed && this.lastMineLevel >= 0
-                && e.NewLocation is MineShaft newShaft && newShaft.mineLevel > this.lastMineLevel)
+                && Game1.player != null && Game1.player.health > 0)
             {
-                this.pendingGateBounce = this.lastMineLevel;
-                return;
+                bool stayingHere = e.NewLocation is MineShaft ms && ms.mineLevel == this.lastMineLevel;
+                if (!stayingHere)
+                {
+                    this.pendingGateBounce = this.lastMineLevel;
+                    return;
+                }
             }
 
             this.Bosses.OnWarped(e.NewLocation);
@@ -1259,6 +1372,7 @@ namespace SaiyanTransformations
             this.lastFloorSealed = false;
             this.pendingGateBounce = -1;
             this.blocking = false;
+            this.parryWindowTicks = 0;
             this.dashCooldownTicks = 0;
             this.dashFlashTicks = 0;
             this.blockFlashTicks = 0;
@@ -1443,8 +1557,19 @@ namespace SaiyanTransformations
             return tex;
         }
 
+        /// <summary>Show narrator text as a plain dialogue box at the bottom of the screen -
+        /// no portrait, no name - so lore lines stay up until dismissed instead of scrolling
+        /// past as a HUD toast that is gone before it can be read.</summary>
+        internal void ShowNarration(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return;
+            try { Game1.drawObjectDialogue(text); }
+            catch (Exception) { ModEntry.Notify(text); }
+        }
+
         /// <summary>Show a boss line the way an NPC speaks: a dialogue box with a portrait and
-        /// the boss's name. Narration is handled separately as narrator toasts.</summary>
+        /// the boss's name. Narration is handled separately as a plain narrator box.</summary>
         internal void ShowBossSpeech(string id, string displayName, string speech)
         {
             if (string.IsNullOrEmpty(speech))

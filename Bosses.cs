@@ -37,7 +37,13 @@ namespace SaiyanTransformations
         SelfDestruct = 16,  // detonates where it dies
         Rush = 32,          // a sudden burst of speed - a dash at the player
         Paralyze = 64,      // freezes the player in place for a moment
-        Shockwave = 128     // a telegraphed ring of force around the boss
+        Shockwave = 128,    // a telegraphed ring of force around the boss
+
+        // ---- signature moves for the marquee villains ----
+        DeathBall = 256,    // Frieza: a huge telegraphed sphere dropped on your position
+        Absorb = 512,       // Cell: siphons your ki from range and heals itself
+        CandyBeam = 1024,   // Buu: a beam that weakens and slows instead of just hurting
+        TimeStop = 2048     // Guldo: freezes you outright and blinks in for a free hit
     }
 
     internal sealed class BossDefinition
@@ -137,7 +143,7 @@ namespace SaiyanTransformations
                 Squad = new[] { MonsterKind.SquidKid },
                 HealthMultiplier = 0.95f, DamageMultiplier = 0.95f, Resilience = 2,
                 Scale = 0.70f, AuraColor = new Color(140, 210, 130),
-                Abilities = BossAbility.Teleport | BossAbility.Paralyze, SpriteSheet = "guldo"
+                Abilities = BossAbility.Teleport | BossAbility.TimeStop, SpriteSheet = "guldo"
             },
             new BossDefinition
             {
@@ -240,7 +246,7 @@ namespace SaiyanTransformations
                 Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.28f, DamageMultiplier = 1.2f, Resilience = 6,
                 Scale = 1.00f, AuraColor = new Color(235, 205, 245),
-                Abilities = BossAbility.Beam | BossAbility.KiBlast,
+                Abilities = BossAbility.Beam | BossAbility.KiBlast | BossAbility.DeathBall,
                 PhaseCount = 2, PhaseAbility = BossAbility.KiBlast, SpriteSheet = "friezafinal"
             },
             new BossDefinition
@@ -261,7 +267,7 @@ namespace SaiyanTransformations
                 Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.78f, DamageMultiplier = 1.44f, Resilience = 13,
                 Scale = 1.05f, AuraColor = new Color(255, 215, 90),
-                Abilities = BossAbility.Beam | BossAbility.KiBlast, SpeedBonus = 3,
+                Abilities = BossAbility.Beam | BossAbility.KiBlast | BossAbility.DeathBall, SpeedBonus = 3,
                 PhaseCount = 2, PhaseAbility = BossAbility.KiBlast, SpriteSheet = "friezagolden"
             },
             new BossDefinition
@@ -292,7 +298,7 @@ namespace SaiyanTransformations
                 Squad = new[] { MonsterKind.Mummy },
                 HealthMultiplier = 1.2f, DamageMultiplier = 1.15f, Resilience = 6,
                 Scale = 0.90f, AuraColor = new Color(120, 200, 120),
-                Abilities = BossAbility.Regenerate, SpriteSheet = "cellimperfect"
+                Abilities = BossAbility.Regenerate | BossAbility.Absorb, SpriteSheet = "cellimperfect"
             },
             new BossDefinition
             {
@@ -302,7 +308,7 @@ namespace SaiyanTransformations
                 Squad = new[] { MonsterKind.Mummy },
                 HealthMultiplier = 1.25f, DamageMultiplier = 1.2f, Resilience = 7,
                 Scale = 0.90f, AuraColor = new Color(140, 220, 140),
-                Abilities = BossAbility.Regenerate, SpriteSheet = "cellsemiperfect"
+                Abilities = BossAbility.Regenerate | BossAbility.Absorb, SpriteSheet = "cellsemiperfect"
             },
             new BossDefinition
             {
@@ -322,8 +328,8 @@ namespace SaiyanTransformations
                 Squad = new[] { MonsterKind.Mummy },
                 HealthMultiplier = 1.35f, DamageMultiplier = 1.25f, Resilience = 7,
                 Scale = 0.98f, AuraColor = new Color(140, 240, 140),
-                Abilities = BossAbility.Beam | BossAbility.Regenerate, PhaseCount = 2,
-                SpriteSheet = "cellperfect"
+                Abilities = BossAbility.Beam | BossAbility.Regenerate | BossAbility.Absorb,
+                PhaseCount = 2, SpriteSheet = "cellperfect"
             },
 
             // ---- 200-300: Buu saga and the deep endgame --------------------
@@ -364,7 +370,7 @@ namespace SaiyanTransformations
                 Squad = new[] { MonsterKind.Mummy },
                 HealthMultiplier = 1.35f, DamageMultiplier = 1.25f, Resilience = 8,
                 Scale = 1.05f, AuraColor = new Color(255, 180, 220),
-                Abilities = BossAbility.Regenerate, SpriteSheet = "buufat"
+                Abilities = BossAbility.Regenerate | BossAbility.CandyBeam, SpriteSheet = "buufat"
             },
             new BossDefinition
             {
@@ -374,7 +380,7 @@ namespace SaiyanTransformations
                 Squad = new[] { MonsterKind.Mummy, MonsterKind.Mummy },
                 HealthMultiplier = 1.4f, DamageMultiplier = 1.25f, Resilience = 8,
                 Scale = 0.78f, AuraColor = new Color(255, 130, 210), SpriteSheet = "superbuu",
-                Abilities = BossAbility.Regenerate
+                Abilities = BossAbility.Regenerate | BossAbility.CandyBeam
             },
             new BossDefinition
             {
@@ -384,7 +390,8 @@ namespace SaiyanTransformations
                 Squad = new[] { MonsterKind.Mummy },
                 HealthMultiplier = 1.55f, DamageMultiplier = 1.3f, Resilience = 9,
                 Scale = 0.98f, AuraColor = new Color(255, 120, 200),
-                Abilities = BossAbility.Beam | BossAbility.Regenerate | BossAbility.Teleport,
+                Abilities = BossAbility.Beam | BossAbility.Regenerate | BossAbility.Teleport
+                            | BossAbility.CandyBeam,
                 PhaseCount = 2, PhaseAbility = BossAbility.Teleport, SpriteSheet = "buusupergohan"
             },
             new BossDefinition
@@ -416,7 +423,7 @@ namespace SaiyanTransformations
                                 MonsterKind.Mummy, MonsterKind.Mummy },
                 HealthMultiplier = 1.65f, DamageMultiplier = 1.4f, Resilience = 12,
                 Scale = 0.92f, AuraColor = new Color(255, 150, 210), SpriteSheet = "kidbuu",
-                Abilities = BossAbility.Regenerate | BossAbility.Shockwave,
+                Abilities = BossAbility.Regenerate | BossAbility.Shockwave | BossAbility.CandyBeam,
                 SpeedBonus = 2, PhaseCount = 1
             },
             new BossDefinition
@@ -448,7 +455,8 @@ namespace SaiyanTransformations
                 Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.8f, DamageMultiplier = 1.45f, Resilience = 13,
                 Scale = 1.15f, AuraColor = new Color(130, 60, 160),
-                Abilities = BossAbility.Beam | BossAbility.KiBlast | BossAbility.Teleport,
+                Abilities = BossAbility.Beam | BossAbility.KiBlast | BossAbility.Teleport
+                            | BossAbility.DeathBall,
                 SpeedBonus = 3, PhaseCount = 2, PhaseAbility = BossAbility.Beam,
                 SpriteSheet = "friezablack"
             },
@@ -581,12 +589,19 @@ namespace SaiyanTransformations
 
         private int introTicks;
 
-        /// <summary>Lines queued to show as a dialogue box on the next free tick, so a warp-in
-        /// or a kill does not try to open a dialogue mid-transition.</summary>
-        // a boss's spoken line, queued to open as a portrait dialogue box on the next free tick
-        private string pendingSpeechId;
-        private string pendingSpeechName;
-        private string pendingSpeech;
+        /// <summary>One queued dialogue box (narrator or boss), opened on the next free tick
+        /// so a warp-in or a kill does not try to open a dialogue mid-transition. Steps are
+        /// shown one at a time - the next only opens once the player dismisses the current -
+        /// so a beat's narrator line and the boss's reply read in order.</summary>
+        private sealed class DialogueStep
+        {
+            public string Id;
+            public string Name;
+            public string Text;
+            public bool Portrait;   // true = boss portrait box, false = plain narrator box
+        }
+
+        private readonly Queue<DialogueStep> pendingDialogue = new Queue<DialogueStep>();
 
         /// <summary>Drives the special moves marquee bosses use on top of their melee.</summary>
         private readonly BossAbilityRunner abilities;
@@ -603,6 +618,13 @@ namespace SaiyanTransformations
         /// <summary>True while a boss is alive on the floor you are standing on — the way
         /// down is sealed until it falls. Drives the "no boss can be skipped" gate.</summary>
         public bool CurrentFloorSealed => this.active != null;
+
+        /// <summary>Turn every boss ki blast currently in flight back on its casters - the
+        /// reward for a well-timed parry. Also lets out a short counter-burst near the player.</summary>
+        public void ReflectBossOrbs(Vector2 playerCentre)
+        {
+            this.abilities?.ReflectOrbs(playerCentre);
+        }
 
         // ------------------------------------------------------------- save data
 
@@ -622,7 +644,7 @@ namespace SaiyanTransformations
             this.active = null;
             this.sawAliveThisVisit = false;
             this.introTicks = 0;
-            this.pendingSpeech = this.pendingSpeechId = this.pendingSpeechName = null;
+            this.pendingDialogue.Clear();
             this.activeHealth = this.activeMaxHealth = this.activeAlive = 0;
             this.abilities?.Reset();
         }
@@ -858,14 +880,17 @@ namespace SaiyanTransformations
             // Anchored to where each form now unlocks. Boss health is scaled by the form the
             // player is expected to be holding, so a floor is brutal without that form and
             // fair with it - the forms are meant to be all but required to keep descending.
+            // Tuned upward from the old curve to keep pace with the mastery-carryover power
+            // gains (mastering forms grants stacking, global stat bonuses), with the biggest
+            // bumps late, where the player has had the most time to master forms.
             if (mineLevel < 10) return 1f;      // base, before the first fight
-            if (mineLevel < 50) return 1.5f;    // Super Saiyan
-            if (mineLevel < 90) return 2.2f;    // Super Saiyan 2
-            if (mineLevel < 140) return 3.2f;   // Super Saiyan 3
-            if (mineLevel < 190) return 4.4f;   // Super Saiyan God
-            if (mineLevel < 240) return 6f;     // Super Saiyan Blue
-            if (mineLevel < 280) return 8.5f;   // Ultra Instinct
-            return 11.5f;                       // Mastered Ultra Instinct, floors 280+
+            if (mineLevel < 50) return 1.6f;    // Super Saiyan
+            if (mineLevel < 90) return 2.4f;    // Super Saiyan 2
+            if (mineLevel < 140) return 3.6f;   // Super Saiyan 3
+            if (mineLevel < 190) return 5.2f;   // Super Saiyan God
+            if (mineLevel < 240) return 7.2f;   // Super Saiyan Blue
+            if (mineLevel < 280) return 10.5f;  // Ultra Instinct
+            return 15f;                         // Mastered Ultra Instinct, floors 280+
         }
 
         /// <summary>Total health for the whole encounter, split across the squad.</summary>
@@ -889,10 +914,14 @@ namespace SaiyanTransformations
             float divisor = Math.Max(5f, Owner.Config.BossDamageDepthDivisor);
             // extra depth term, also anchored at floor 20, so late hits sting more
             float depthBite = 1f + (Math.Max(0, def.MineLevel - 20) / 220f);
+            // flat uplift so boss hits still land through the extra defense that mastery
+            // carryover hands the player; the difficulty preset scales on top of this
+            const float masteryOffset = 1.15f;
             return Math.Max(1, (int)(Owner.Config.BaseBossDamage
                                      * (1f + (def.MineLevel / divisor))
                                      * depthBite * def.DamageMultiplier
                                      * cycleDmg * this.RematchMultiplier(def)
+                                     * masteryOffset
                                      * Owner.Config.BossDamageScale));
         }
 
@@ -972,24 +1001,62 @@ namespace SaiyanTransformations
 
         private bool TryFindSpot(GameLocation location, Vector2 playerTile, out Vector2 tile)
         {
-            int width = location.Map.Layers[0].LayerWidth;
-            int height = location.Map.Layers[0].LayerHeight;
+            tile = Vector2.Zero;
 
-            for (int attempt = 0; attempt < 500; attempt++)
+            // Flood-fill the walkable region the player is actually standing in and only
+            // spawn somewhere inside it. Picking random map tiles could drop a boss into a
+            // sealed-off cavern pocket (or off the walkable area entirely) where the player
+            // can never reach it - and, with the floor gate, could never leave either.
+            Vector2 start = new Vector2((int)playerTile.X, (int)playerTile.Y);
+            var visited = new HashSet<Vector2> { start };
+            var queue = new Queue<Vector2>();
+            queue.Enqueue(start);
+
+            var preferred = new List<Vector2>();   // 4-18 tiles away: normal spawn band
+            var fallback = new List<Vector2>();    // 3+ tiles: used only if the band is empty
+
+            Vector2[] steps = { new Vector2(1, 0), new Vector2(-1, 0),
+                                new Vector2(0, 1), new Vector2(0, -1) };
+
+            int guard = 0;
+            while (queue.Count > 0 && guard++ < 6000)
             {
-                Vector2 candidate = new Vector2(Game1.random.Next(width), Game1.random.Next(height));
-                float distance = Vector2.Distance(candidate, playerTile);
-                if (distance < 4f || distance > 18f)
-                    continue;
-                if (!this.IsSpawnable(location, candidate))
+                Vector2 cur = queue.Dequeue();
+                float dist = Vector2.Distance(cur, start);
+
+                if (dist >= 3f && this.IsSpawnable(location, cur))
+                {
+                    if (dist >= 4f && dist <= 18f)
+                        preferred.Add(cur);
+                    else
+                        fallback.Add(cur);
+                }
+
+                if (dist > 22f)          // no need to walk the whole map
                     continue;
 
-                tile = candidate;
-                return true;
+                foreach (Vector2 step in steps)
+                {
+                    Vector2 n = cur + step;
+                    if (!visited.Add(n))
+                        continue;
+                    if (!location.isTileOnMap(n))
+                        continue;
+                    if (!location.isTilePassable(
+                            new xTile.Dimensions.Location((int)n.X, (int)n.Y), Game1.viewport))
+                        continue;
+                    if (location.isWaterTile((int)n.X, (int)n.Y))
+                        continue;
+                    queue.Enqueue(n);
+                }
             }
 
-            tile = Vector2.Zero;
-            return false;
+            List<Vector2> pool = preferred.Count > 0 ? preferred : fallback;
+            if (pool.Count == 0)
+                return false;
+
+            tile = pool[Game1.random.Next(pool.Count)];
+            return true;
         }
 
         private void Announce(BossDefinition def, bool returning)
@@ -1031,36 +1098,37 @@ namespace SaiyanTransformations
             }
         }
 
-        /// <summary>Narration goes out immediately as a narrator toast; the boss's own words are
-        /// queued to open as a portrait dialogue box on the next free tick.</summary>
+        /// <summary>Queue a beat: the narrator's scene-setting line as a plain dialogue box,
+        /// then the boss's own words as a portrait box. Both stay up until dismissed so they
+        /// can actually be read, and they open one after the other.</summary>
         private void Play(Beat beat, BossDefinition def)
         {
             if (beat == null)
                 return;
             if (!string.IsNullOrEmpty(beat.Narration))
-                ModEntry.Notify(beat.Narration);
+                this.pendingDialogue.Enqueue(new DialogueStep { Text = beat.Narration, Portrait = false });
             if (!string.IsNullOrEmpty(beat.Speech))
-            {
-                this.pendingSpeechId = def.Id;
-                this.pendingSpeechName = def.DisplayName;
-                this.pendingSpeech = beat.Speech;
-            }
+                this.pendingDialogue.Enqueue(new DialogueStep
+                {
+                    Id = def.Id, Name = def.DisplayName, Text = beat.Speech, Portrait = true
+                });
         }
 
-        /// <summary>Open the queued boss speech as a portrait dialogue box once the world can
-        /// display one (not mid-warp, not with a menu already open).</summary>
+        /// <summary>Open the next queued dialogue box once the world can display one (not
+        /// mid-warp, not with a menu already open). One per free tick, so each box waits for
+        /// the previous to be dismissed.</summary>
         private void ShowPendingDialogue()
         {
-            if (this.pendingSpeech == null)
+            if (this.pendingDialogue.Count == 0)
                 return;
             if (!Context.IsPlayerFree || Game1.activeClickableMenu != null || Game1.eventUp)
                 return;
 
-            string id = this.pendingSpeechId;
-            string name = this.pendingSpeechName;
-            string speech = this.pendingSpeech;
-            this.pendingSpeech = this.pendingSpeechId = this.pendingSpeechName = null;
-            Owner.ShowBossSpeech(id, name, speech);
+            DialogueStep step = this.pendingDialogue.Dequeue();
+            if (step.Portrait)
+                Owner.ShowBossSpeech(step.Id, step.Name, step.Text);
+            else
+                Owner.ShowNarration(step.Text);
         }
 
         // ---------------------------------------------------------------- update

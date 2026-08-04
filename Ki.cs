@@ -48,6 +48,7 @@ namespace SaiyanTransformations
                 float baseMax = Owner.Config.BaseMaxKi
                                 + (Owner.DeepestMineLevel() * Owner.Config.KiPerMineLevel)
                                 + Owner.Progress.State.ZenkaiKiBonus
+                                + Owner.Progress.MasteryGlobalKiBonus()
                                 - Owner.DragonBalls.State.KiCapacityToll;
 
                 baseMax = Math.Max(Owner.Config.MinimumBaseKi, baseMax);

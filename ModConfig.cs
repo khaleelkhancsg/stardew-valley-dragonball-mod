@@ -45,6 +45,18 @@ namespace SaiyanTransformations
         public float BlockKiPerSecond { get; set; } = 8f;
         public float BlockKiPerHit { get; set; } = 6f;
 
+        /// <summary>A perfectly-timed guard: raise block just as a hit lands and you take no
+        /// damage, spend no ki, and get a brief window of invincibility - real counterplay
+        /// on top of the held guard.</summary>
+        public bool EnableParry { get; set; } = true;
+
+        /// <summary>How long after raising your guard the parry window stays open (ms).</summary>
+        public int ParryWindowMs { get; set; } = 250;
+
+        /// <summary>A successful parry deflects the boss's ki blasts back at it and lets out
+        /// a short counter-burst that damages nearby enemies.</summary>
+        public bool ParryReflect { get; set; } = true;
+
         // ---- unlocks -----------------------------------------------------
 
         /// <summary>Mine level that unlocks each form. Skull Cavern levels count as 121+.</summary>
@@ -116,6 +128,22 @@ namespace SaiyanTransformations
         /// <summary>Ki drain reduction at full mastery. 0.4 = 40% cheaper to hold.</summary>
         public float MasteryMaxDrainReduction { get; set; } = 0.4f;
 
+        /// <summary>Mastering a form grants a permanent bonus that applies in EVERY form and
+        /// stacks with every other mastered form - the incentive to master as many forms as
+        /// you can. The values below are the bonus per fully-mastered form; a half-mastered
+        /// form gives half. Master all seven and you gain the full sum in every form.</summary>
+        public bool EnableMasteryBonuses { get; set; } = true;
+
+        /// <summary>Attack multiplier added per fully-mastered form (0.15 = +15%). Stacks:
+        /// all seven mastered is +105% attack on top of your current form.</summary>
+        public float MasteryAttackBonusPerForm { get; set; } = 0.15f;
+
+        /// <summary>Flat defense added per fully-mastered form.</summary>
+        public int MasteryDefenseBonusPerForm { get; set; } = 3;
+
+        /// <summary>Max ki added per fully-mastered form.</summary>
+        public float MasteryKiBonusPerForm { get; set; } = 15f;
+
         /// <summary>Permanent bumps for surviving a near-death fight.</summary>
         public bool EnableZenkai { get; set; } = true;
 
@@ -140,6 +168,12 @@ namespace SaiyanTransformations
         public float KiMeleeDamageFraction { get; set; } = 0.35f;
 
         // ---- bosses ------------------------------------------------------
+
+        /// <summary>One-click difficulty. Selecting a preset in the config menu overwrites the
+        /// boss health / damage / ability-damage dials below with a tuned set; "Custom" leaves
+        /// them exactly as you have set them. Bosses are already tuned upward to account for
+        /// the mastery-carryover power gains, so "Normal" is the intended baseline.</summary>
+        public string DifficultyPreset { get; set; } = "Normal";
 
         /// <summary>Spawn a guardian on each milestone floor.</summary>
         public bool EnableBosses { get; set; } = true;
