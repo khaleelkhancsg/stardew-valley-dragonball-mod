@@ -1175,13 +1175,18 @@ namespace SaiyanTransformations
             if (unlocked <= this.announcedUnlocks)
                 return;
 
-            for (int i = this.announcedUnlocks; i < unlocked; i++)
-                ModEntry.Notify($"A new power awakens: {Transformation.All[i].DisplayName}!");
+            // wait for a moment we can actually open a dialogue box; while one is already up
+            // this stays queued, so several unlocks at once each get their own box in turn
+            if (!Context.IsPlayerFree || Game1.activeClickableMenu != null || Game1.eventUp)
+                return;
 
+            string name = Transformation.All[this.announcedUnlocks].DisplayName;
+            this.ShowNarration($"A new power awakens: {name}!  Press {this.Config.TransformKey} to "
+                               + "ascend toward it - at your highest form, press it again to power down.");
             this.PlayCue("unlock", "yoba");
             if (this.Config.ScreenFlash)
                 Game1.flashAlpha = 1f;
-            this.announcedUnlocks = unlocked;
+            this.announcedUnlocks++;   // advance one; any further unlocks show on later ticks
         }
 
         private void OnRenderedWorld(object sender, RenderedWorldEventArgs e)
