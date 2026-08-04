@@ -930,7 +930,14 @@ namespace SaiyanTransformations
         {
             int cycle = this.Cycle;
 
-            monster.MaxHealth = Math.Max(1, share);
+            // A mummy boss will reform BossMummyRevives times, each time restoring to MaxHealth,
+            // so split its health across every knock-down. Two reforms of half a bar takes the
+            // same total damage as one full bar - same fight length, with a comeback in the
+            // middle.
+            int bars = 1;
+            if (monster is Mummy)
+                bars = Math.Max(1, Owner.Config.BossMummyRevives + 1);
+            monster.MaxHealth = Math.Max(1, share / bars);
             monster.Health = monster.MaxHealth;
             monster.DamageToFarmer = this.EncounterDamage(def);
             monster.resilience.Value += def.Resilience + (3 * cycle) + (2 * this.DefeatCountOf(def));
@@ -1176,7 +1183,7 @@ namespace SaiyanTransformations
                 {
                     // Mummy-type bosses reform on death; once one has used up its allowed
                     // reforms, take it out of the fight for good instead of counting it alive.
-                    if (monster is Mummy mummy && this.MummyDownForGood(mummy))
+                    if (monster is Mummy mummy && this.MummyDownForGood(mummy, def))
                     {
                         (toRemove ??= new List<NPC>()).Add(npc);
                         continue;
@@ -1248,7 +1255,7 @@ namespace SaiyanTransformations
         /// knocked down more times than it is allowed to reform, meaning it should be removed
         /// for good. A knock-down is counted once (a modData edge flag set while it is down,
         /// cleared when it stands back up), so it is not tallied every tick.</summary>
-        private bool MummyDownForGood(Mummy mummy)
+        private bool MummyDownForGood(Mummy mummy, BossDefinition def)
         {
             if (mummy.reviveTimer.Value <= 0)
             {
@@ -1266,7 +1273,18 @@ namespace SaiyanTransformations
             downs++;
             mummy.modData[MummyDownsKey] = downs.ToString();
 
-            return downs > Math.Max(0, Owner.Config.BossMummyRevives);
+            if (downs > Math.Max(0, Owner.Config.BossMummyRevives))
+                return true;                              // out of reforms: put it down for good
+
+            // it will reform - snappier than a vanilla mummy's 10s, with a line and a roar
+            mummy.reviveTimer.Value = Math.Min(mummy.reviveTimer.Value, 2000);
+            string line = BossDialogue.ReviveLine(def.Id);
+            if (!string.IsNullOrEmpty(line))
+                ModEntry.Notify(line);
+            Owner.PlayCue("boss_roar", "shadowpeep");
+            if (Owner.Config.ScreenFlash)
+                Game1.flashAlpha = 0.4f;
+            return false;
         }
 
         private static int EffectivePhaseCount(BossDefinition def)

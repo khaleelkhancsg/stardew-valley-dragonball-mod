@@ -215,10 +215,11 @@ namespace SaiyanTransformations
         public float BossRegenPercentPerSecond { get; set; } = 2.0f;
 
         /// <summary>Mummy-type bosses (the Cells, the Buus, Metal Cooler) reform after "dying"
-        /// like vanilla mummies. This is how many extra times one may reform before it is put
-        /// down for good. 0 means it dies the first time its health is depleted, like every
-        /// other boss; raise it to let those bosses take several knock-downs to finish.</summary>
-        public int BossMummyRevives { get; set; } = 0;
+        /// like vanilla mummies. This is how many times one may reform before it is put down
+        /// for good. Their health is divided across (revives + 1) knock-downs, so the fight
+        /// takes the same total time no matter this value - it just adds dramatic comebacks.
+        /// 0 means it dies the first time its health is depleted, like every other boss.</summary>
+        public int BossMummyRevives { get; set; } = 1;
 
         /// <summary>Let bosses move faster than their base monster type — a per-boss bonus plus
         /// a small climb per rematch tier, so signature bosses feel quick and deep repeat

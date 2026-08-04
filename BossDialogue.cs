@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using StardewValley;
 
 namespace SaiyanTransformations
 {
@@ -40,6 +41,60 @@ namespace SaiyanTransformations
         {
             return id != null && Table.TryGetValue(id, out BossLines lines) ? lines : null;
         }
+
+        /// <summary>A short narrator line for the moment a Mummy-type boss reforms after being
+        /// knocked down. Each such boss has its own; anything without falls back to a generic.</summary>
+        public static string ReviveLine(string id)
+        {
+            if (id != null && Revives.TryGetValue(id, out string[] lines) && lines.Length > 0)
+                return lines[Game1.random.Next(lines.Length)];
+            return "It drags itself back together and rises.";
+        }
+
+        private static readonly Dictionary<string, string[]> Revives =
+            new Dictionary<string, string[]>
+            {
+                ["CellImperfect"] = new[]
+                {
+                    "Imperfect Cell oozes back into shape. It is still hungry.",
+                    "You cannot kill what has not finished becoming.",
+                },
+                ["CellSemiPerfect"] = new[]
+                {
+                    "Semi-Perfect Cell reknits itself, seething at the interruption.",
+                    "So close to perfect - it will not be stopped one form short.",
+                },
+                ["CellPerfect"] = new[]
+                {
+                    "Perfect Cell reassembles without a mark. Did you think perfection could die?",
+                    "Every cell remembers its shape; Perfect Cell simply puts itself back.",
+                },
+                ["BuuFat"] = new[]
+                {
+                    "The pink scatter pulls itself together. Fat Buu giggles.",
+                    "Buu is not done playing with you yet.",
+                },
+                ["SuperBuu"] = new[]
+                {
+                    "Super Buu flows back into one piece, smiling wider.",
+                    "The steam gathers, hardens, and Super Buu stands again.",
+                },
+                ["BuuSuperGohan"] = new[]
+                {
+                    "Super Buu reforms, calm and unhurried - it has all the time there is.",
+                    "A demigod's power knits the pieces back together without effort.",
+                },
+                ["MetalCoolerLegion"] = new[]
+                {
+                    "Where one falls, the Big Gete Star feeds it back. Another Cooler rises.",
+                    "The Legion does not run out of bodies.",
+                },
+                ["KidBuu"] = new[]
+                {
+                    "Kid Buu shrieks with laughter and pops back into shape.",
+                    "There is no killing the original. It reforms, cackling.",
+                },
+            };
 
         // beat builders: N = narration only, S = speech only, B = both
         private static Beat N(string narration) => new Beat(narration, null);
