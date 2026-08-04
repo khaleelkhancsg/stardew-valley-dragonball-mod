@@ -915,8 +915,9 @@ namespace SaiyanTransformations
             // extra depth term, also anchored at floor 20, so late hits sting more
             float depthBite = 1f + (Math.Max(0, def.MineLevel - 20) / 220f);
             // flat uplift so boss hits still land through the extra defense that mastery
-            // carryover hands the player; the difficulty preset scales on top of this
-            const float masteryOffset = 1.15f;
+            // carryover hands the player; the difficulty preset scales on top of this.
+            // Includes a further +50% across the board to keep the fights close.
+            const float masteryOffset = 1.15f * 1.5f;
             return Math.Max(1, (int)(Owner.Config.BaseBossDamage
                                      * (1f + (def.MineLevel / divisor))
                                      * depthBite * def.DamageMultiplier
