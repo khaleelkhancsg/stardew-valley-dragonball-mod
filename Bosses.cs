@@ -141,7 +141,7 @@ namespace SaiyanTransformations
                 Subtitle = "He would stop time if you let him",
                 MineLevel = 20, Reward = BossReward.Technique, TechniqueId = "DestructoDisk",
                 Squad = new[] { MonsterKind.SquidKid },
-                HealthMultiplier = 0.95f, DamageMultiplier = 0.95f, Resilience = 2,
+                HealthMultiplier = 0.52f, DamageMultiplier = 0.95f, Resilience = 2,
                 Scale = 0.70f, AuraColor = new Color(140, 210, 130),
                 Abilities = BossAbility.Teleport | BossAbility.TimeStop, SpriteSheet = "guldo"
             },
