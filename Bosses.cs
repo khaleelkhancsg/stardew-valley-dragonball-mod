@@ -419,9 +419,8 @@ namespace SaiyanTransformations
                 Id = "KidBuu", DisplayName = "Kid Buu",
                 Subtitle = "The original, and the worst",
                 MineLevel = 265, Reward = BossReward.PowerCache, CacheKi = 62f, CacheAttack = 0.10f,
-                Squad = new[] { MonsterKind.Mummy, MonsterKind.Mummy,
-                                MonsterKind.Mummy, MonsterKind.Mummy },
-                HealthMultiplier = 1.65f, DamageMultiplier = 1.4f, Resilience = 12,
+                Squad = new[] { MonsterKind.Mummy },
+                HealthMultiplier = 1.9f, DamageMultiplier = 2.6f, Resilience = 12,
                 Scale = 0.92f, AuraColor = new Color(255, 150, 210), SpriteSheet = "kidbuu",
                 Abilities = BossAbility.Regenerate | BossAbility.Shockwave | BossAbility.CandyBeam,
                 SpeedBonus = 2, PhaseCount = 1
@@ -475,9 +474,8 @@ namespace SaiyanTransformations
                 Id = "Destroyer", DisplayName = "God of Destruction",
                 Subtitle = "You should not have come this deep",
                 MineLevel = 300, Reward = BossReward.PowerCache, CacheKi = 90f, CacheAttack = 0.15f,
-                Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute,
-                                MonsterKind.ShadowBrute, MonsterKind.ShadowBrute },
-                HealthMultiplier = 1.85f, DamageMultiplier = 1.5f, Resilience = 14,
+                Squad = new[] { MonsterKind.ShadowBrute },
+                HealthMultiplier = 2.1f, DamageMultiplier = 2.8f, Resilience = 14,
                 Scale = 1.18f, AuraColor = new Color(190, 120, 255), SpriteSheet = "destroyer",
                 Abilities = BossAbility.Teleport | BossAbility.KiBlast | BossAbility.Rush,
                 SpeedBonus = 3, PhaseCount = 2, PhaseAbility = BossAbility.Beam
