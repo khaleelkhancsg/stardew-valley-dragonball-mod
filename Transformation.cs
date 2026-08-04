@@ -72,7 +72,7 @@ namespace SaiyanTransformations
             {
                 Id = "SuperSaiyan", SoundName = "transform_ssj", DisplayName = "Super Saiyan",
                 Description = "Golden fury. Attack x1.5, faster, tougher.",
-                SpriteIndex = 0, HairId = 77213001, DefaultUnlockLevel = 20,
+                SpriteIndex = 0, HairId = 77213001, DefaultUnlockLevel = 10,
                 AuraColor = new Color(255, 214, 78),
                 AttackMultiplier = 1.5f, FlatAttack = 5, SpeedBonus = 1, EnergyMultiplier = 1.25f,
                 Defense = 2, CritChanceBonus = 0.10f, CritPowerBonus = 0.15f, WeaponSpeedBonus = 0.15f,
@@ -84,7 +84,7 @@ namespace SaiyanTransformations
             {
                 Id = "SuperSaiyan2", SoundName = "transform_ssj2", DisplayName = "Super Saiyan 2",
                 Description = "Sparks of rage. Attack x2, energy x1.5.",
-                SpriteIndex = 1, HairId = 77213002, DefaultUnlockLevel = 40,
+                SpriteIndex = 1, HairId = 77213002, DefaultUnlockLevel = 50,
                 AuraColor = new Color(255, 233, 108),
                 AttackMultiplier = 2.0f, FlatAttack = 10, SpeedBonus = 2, EnergyMultiplier = 1.5f,
                 Defense = 4, CritChanceBonus = 0.15f, CritPowerBonus = 0.25f, WeaponSpeedBonus = 0.25f,
@@ -96,7 +96,7 @@ namespace SaiyanTransformations
             {
                 Id = "SuperSaiyan3", SoundName = "transform_ssj3", DisplayName = "Super Saiyan 3",
                 Description = "Overwhelming, and it burns energy fast.",
-                SpriteIndex = 2, HairId = 77213003, DefaultUnlockLevel = 60,
+                SpriteIndex = 2, HairId = 77213003, DefaultUnlockLevel = 90,
                 AuraColor = new Color(255, 204, 56),
                 AttackMultiplier = 3.0f, FlatAttack = 18, SpeedBonus = 3, EnergyMultiplier = 1.75f,
                 Defense = 6, CritChanceBonus = 0.20f, CritPowerBonus = 0.35f, WeaponSpeedBonus = 0.35f,
@@ -108,7 +108,7 @@ namespace SaiyanTransformations
             {
                 Id = "SuperSaiyanGod", SoundName = "transform_god", DisplayName = "Super Saiyan God",
                 Description = "Divine ki. Attack x4, energy x2.",
-                SpriteIndex = 3, HairId = 77213004, DefaultUnlockLevel = 80,
+                SpriteIndex = 3, HairId = 77213004, DefaultUnlockLevel = 140,
                 AuraColor = new Color(255, 84, 122),
                 AttackMultiplier = 4.0f, FlatAttack = 26, SpeedBonus = 4, EnergyMultiplier = 2.0f,
                 Defense = 9, CritChanceBonus = 0.25f, CritPowerBonus = 0.45f, WeaponSpeedBonus = 0.40f,
@@ -120,7 +120,7 @@ namespace SaiyanTransformations
             {
                 Id = "SuperSaiyanBlue", SoundName = "transform_blue", DisplayName = "Super Saiyan Blue",
                 Description = "God ki under perfect control. Attack x5.5.",
-                SpriteIndex = 4, HairId = 77213005, DefaultUnlockLevel = 100,
+                SpriteIndex = 4, HairId = 77213005, DefaultUnlockLevel = 190,
                 AuraColor = new Color(112, 202, 255),
                 AttackMultiplier = 5.5f, FlatAttack = 36, SpeedBonus = 5, EnergyMultiplier = 2.5f,
                 Defense = 12, CritChanceBonus = 0.30f, CritPowerBonus = 0.60f, WeaponSpeedBonus = 0.45f,
@@ -132,7 +132,7 @@ namespace SaiyanTransformations
             {
                 Id = "UltraInstinct", SoundName = "transform_ui", DisplayName = "Ultra Instinct",
                 Description = "The body moves on its own. Attack x8, energy x3, evades half of all hits.",
-                SpriteIndex = 5, HairId = 77213006, DefaultUnlockLevel = 120,
+                SpriteIndex = 5, HairId = 77213006, DefaultUnlockLevel = 240,
                 AuraColor = new Color(214, 236, 255),
                 AttackMultiplier = 8.0f, FlatAttack = 50, SpeedBonus = 6, EnergyMultiplier = 3.0f,
                 Defense = 16, CritChanceBonus = 0.40f, CritPowerBonus = 0.85f, WeaponSpeedBonus = 0.55f,
@@ -145,7 +145,7 @@ namespace SaiyanTransformations
                 Id = "MasteredUltraInstinct", SoundName = "transform_ui",
                 DisplayName = "Mastered Ultra Instinct",
                 Description = "Perfect stillness. Attack x12, and evasion that climbs while untouched.",
-                SpriteIndex = 6, HairId = 77213007, DefaultUnlockLevel = 120,
+                SpriteIndex = 6, HairId = 77213007, DefaultUnlockLevel = 280,
                 RequiredWishes = 5,
                 AuraColor = new Color(238, 246, 255),
                 AttackMultiplier = 12f, FlatAttack = 70, SpeedBonus = 7, EnergyMultiplier = 3.5f,
