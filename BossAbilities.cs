@@ -52,9 +52,12 @@ namespace SaiyanTransformations
         private const int CandyBeamCooldown = 360;   // ~6s
         private const int CandyDebuffMs = 6000;
 
-        private const int TimeStopCooldown = 560;    // ~9.3s
-        private const int TimeStopMs = 1400;
+        private const int TimeStopCooldown = 1200;   // ~20s per Guldo
+        private const int TimeStopMs = 1000;         // a shorter, less punishing freeze
         private const float TimeStopRange = 9f * 64f;
+        // shared across every Guldo on the floor so multiple bodies cannot chain-freeze you
+        private const int GlobalTimeStopGap = 720;   // >= 12s between any two time stops
+        private int lastTimeStopTick = int.MinValue;
 
         /// <summary>modData key a boss carries once a phase grants it an extra ability.</summary>
         public const string PhaseAbilityKey = "khaleelkhan.SaiyanTransformations/phaseability";
@@ -120,6 +123,7 @@ namespace SaiyanTransformations
         {
             this.hazards.Clear();
             this.states.Clear();
+            this.lastTimeStopTick = int.MinValue;
         }
 
         // ------------------------------------------------------------- helpers
@@ -349,9 +353,12 @@ namespace SaiyanTransformations
             Farmer p = Game1.player;
             if (p == null || p.freezePause > 0f)
                 return;
+            if (Game1.ticks - this.lastTimeStopTick < GlobalTimeStopGap)
+                return;   // one time stop landed recently - do not chain another
             if (Vector2.Distance(Centre(monster), Centre(p)) > TimeStopRange)
                 return;
 
+            this.lastTimeStopTick = Game1.ticks;
             p.freezePause = TimeStopMs;
             this.Blink(monster);
             Owner.PlayCue("dodge", "wand");
