@@ -557,6 +557,8 @@ namespace SaiyanTransformations
         public const string SecondWindKey = "khaleelkhan.SaiyanTransformations/secondwind";
         public const string InvaderKey = "khaleelkhan.SaiyanTransformations/invader";
         public const string PhaseKey = "khaleelkhan.SaiyanTransformations/phase";
+        private const string MummyDownEdgeKey = "khaleelkhan.SaiyanTransformations/mummydown";
+        private const string MummyDownsKey = "khaleelkhan.SaiyanTransformations/mummydowns";
 
         /// <summary>Custom sheet per monster type, sized to match vanilla exactly so the
         /// game's frame-index maths lands on the right art. Serpents keep vanilla art.</summary>
@@ -1165,12 +1167,21 @@ namespace SaiyanTransformations
             int alive = 0;
             int health = 0;
             int maxHealth = 0;
+            List<NPC> toRemove = null;
             foreach (NPC npc in shaft.characters)
             {
                 if (npc is Monster monster
                     && monster.modData.TryGetValue(BossKey, out string id)
                     && id == def.Id)
                 {
+                    // Mummy-type bosses reform on death; once one has used up its allowed
+                    // reforms, take it out of the fight for good instead of counting it alive.
+                    if (monster is Mummy mummy && this.MummyDownForGood(mummy))
+                    {
+                        (toRemove ??= new List<NPC>()).Add(npc);
+                        continue;
+                    }
+
                     this.CheckSecondWind(monster);
                     if (Owner.Config.EnableBossPhases)
                         this.CheckPhase(monster, def);
@@ -1181,6 +1192,10 @@ namespace SaiyanTransformations
                     maxHealth += Math.Max(1, monster.MaxHealth);
                 }
             }
+
+            if (toRemove != null)
+                foreach (NPC dead in toRemove)
+                    shaft.characters.Remove(dead);
 
             if (Owner.Config.EnableBossAbilities)
                 this.abilities.SweepDead();
@@ -1228,6 +1243,32 @@ namespace SaiyanTransformations
         /// The exceptions never phase: Dragon Ball guardians, and any multi-body squad - a
         /// group has no single boss to power up, and each member would announce the phase
         /// separately, which just spams the toast.</summary>
+        /// <summary>Tracks a boss mummy's reforms. Vanilla mummies revive forever, so a
+        /// Mummy-type boss could never actually be killed. Returns true once one has been
+        /// knocked down more times than it is allowed to reform, meaning it should be removed
+        /// for good. A knock-down is counted once (a modData edge flag set while it is down,
+        /// cleared when it stands back up), so it is not tallied every tick.</summary>
+        private bool MummyDownForGood(Mummy mummy)
+        {
+            if (mummy.reviveTimer.Value <= 0)
+            {
+                mummy.modData.Remove(MummyDownEdgeKey);   // upright: ready to count its next fall
+                return false;
+            }
+
+            if (mummy.modData.ContainsKey(MummyDownEdgeKey))
+                return false;                              // already counted this knock-down
+
+            mummy.modData[MummyDownEdgeKey] = "1";
+            int downs = 0;
+            if (mummy.modData.TryGetValue(MummyDownsKey, out string s))
+                int.TryParse(s, out downs);
+            downs++;
+            mummy.modData[MummyDownsKey] = downs.ToString();
+
+            return downs > Math.Max(0, Owner.Config.BossMummyRevives);
+        }
+
         private static int EffectivePhaseCount(BossDefinition def)
         {
             if (def.Reward == BossReward.DragonBall)

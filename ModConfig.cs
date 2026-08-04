@@ -214,6 +214,12 @@ namespace SaiyanTransformations
         /// <summary>Percent of max health a regenerating boss heals per second.</summary>
         public float BossRegenPercentPerSecond { get; set; } = 2.0f;
 
+        /// <summary>Mummy-type bosses (the Cells, the Buus, Metal Cooler) reform after "dying"
+        /// like vanilla mummies. This is how many extra times one may reform before it is put
+        /// down for good. 0 means it dies the first time its health is depleted, like every
+        /// other boss; raise it to let those bosses take several knock-downs to finish.</summary>
+        public int BossMummyRevives { get; set; } = 0;
+
         /// <summary>Let bosses move faster than their base monster type — a per-boss bonus plus
         /// a small climb per rematch tier, so signature bosses feel quick and deep repeat
         /// fights are harder to run from. Turn off to keep vanilla per-type speeds.</summary>
