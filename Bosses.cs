@@ -191,8 +191,7 @@ namespace SaiyanTransformations
                 Id = "BallGuardian1", DisplayName = "Guardian of the One-Star Ball",
                 Subtitle = "It will not give the sphere up quietly",
                 MineLevel = 70, Reward = BossReward.DragonBall, DragonBallNumber = 1,
-                Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute,
-                                MonsterKind.ShadowBrute },
+                Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.1f, DamageMultiplier = 1.05f, Resilience = 3,
                 Scale = 0.88f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
             },
@@ -286,7 +285,7 @@ namespace SaiyanTransformations
                 Id = "BallGuardian3", DisplayName = "Guardian of the Three-Star Ball",
                 Subtitle = "Two of them, and neither tires",
                 MineLevel = 160, Reward = BossReward.DragonBall, DragonBallNumber = 3,
-                Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute },
+                Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.2f, DamageMultiplier = 1.15f, Resilience = 6,
                 Scale = 0.88f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
             },
@@ -315,8 +314,7 @@ namespace SaiyanTransformations
                 Id = "CellJuniors", DisplayName = "Cell Juniors",
                 Subtitle = "Small, blue, and merciless",
                 MineLevel = 180, Reward = BossReward.Supplies, SupplySenzu = 3, SupplyGold = 20000,
-                Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute,
-                                MonsterKind.ShadowBrute, MonsterKind.ShadowBrute },
+                Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.25f, DamageMultiplier = 1.2f, Resilience = 6,
                 Scale = 0.92f, AuraColor = new Color(150, 210, 255), SpriteSheet = "celljr"
             },
@@ -338,7 +336,7 @@ namespace SaiyanTransformations
                 Id = "Bojack", DisplayName = "Bojack",
                 Subtitle = "Sealed away once. Not well enough.",
                 MineLevel = 200, Reward = BossReward.Technique, TechniqueId = "Kaioken",
-                Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute },
+                Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.3f, DamageMultiplier = 1.2f, Resilience = 7,
                 Scale = 0.92f, AuraColor = new Color(120, 230, 170), SpriteSheet = "bojack"
             },
@@ -347,8 +345,7 @@ namespace SaiyanTransformations
                 Id = "Dabura", DisplayName = "Dabura, Demon King",
                 Subtitle = "Spit turns flesh to stone",
                 MineLevel = 210, Reward = BossReward.Supplies, SupplySenzu = 3, SupplyGold = 24000,
-                Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute,
-                                MonsterKind.ShadowBrute },
+                Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.3f, DamageMultiplier = 1.2f, Resilience = 8,
                 Scale = 0.92f, AuraColor = new Color(200, 60, 60), SpriteSheet = "dabura",
                 Abilities = BossAbility.Paralyze
@@ -358,7 +355,7 @@ namespace SaiyanTransformations
                 Id = "BallGuardian4", DisplayName = "Guardian of the Four-Star Ball",
                 Subtitle = "Deep in the Skull Cavern now",
                 MineLevel = 220, Reward = BossReward.DragonBall, DragonBallNumber = 4,
-                Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute },
+                Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.3f, DamageMultiplier = 1.2f, Resilience = 8,
                 Scale = 0.88f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
             },
@@ -377,7 +374,7 @@ namespace SaiyanTransformations
                 Id = "SuperBuu", DisplayName = "Super Buu",
                 Subtitle = "It copies what it eats",
                 MineLevel = 230, Reward = BossReward.Supplies, SupplySenzu = 4, SupplyGold = 30000,
-                Squad = new[] { MonsterKind.Mummy, MonsterKind.Mummy },
+                Squad = new[] { MonsterKind.Mummy },
                 HealthMultiplier = 1.4f, DamageMultiplier = 1.25f, Resilience = 8,
                 Scale = 0.78f, AuraColor = new Color(255, 130, 210), SpriteSheet = "superbuu",
                 Abilities = BossAbility.Regenerate | BossAbility.CandyBeam
@@ -399,8 +396,7 @@ namespace SaiyanTransformations
                 Id = "BallGuardian5", DisplayName = "Guardian of the Five-Star Ball",
                 Subtitle = "Three abreast, filling the tunnel",
                 MineLevel = 250, Reward = BossReward.DragonBall, DragonBallNumber = 5,
-                Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute,
-                                MonsterKind.ShadowBrute },
+                Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.35f, DamageMultiplier = 1.25f, Resilience = 9,
                 Scale = 0.88f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
             },
@@ -409,8 +405,7 @@ namespace SaiyanTransformations
                 Id = "MetalCoolerLegion", DisplayName = "Metal Cooler Legion",
                 Subtitle = "Break one and the next steps forward",
                 MineLevel = 260, Reward = BossReward.Supplies, SupplySenzu = 4, SupplyGold = 45000,
-                Squad = new[] { MonsterKind.Mummy, MonsterKind.Mummy, MonsterKind.Mummy,
-                                MonsterKind.Mummy },
+                Squad = new[] { MonsterKind.Mummy },
                 HealthMultiplier = 1.5f, DamageMultiplier = 1.35f, Resilience = 11,
                 Scale = 0.92f, AuraColor = new Color(170, 220, 255), SpriteSheet = "metalcooler"
             },
@@ -430,8 +425,7 @@ namespace SaiyanTransformations
                 Id = "BallGuardian6", DisplayName = "Guardian of the Six-Star Ball",
                 Subtitle = "The dust never settles around them",
                 MineLevel = 270, Reward = BossReward.DragonBall, DragonBallNumber = 6,
-                Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute,
-                                MonsterKind.ShadowBrute },
+                Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.4f, DamageMultiplier = 1.3f, Resilience = 10,
                 Scale = 0.88f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
             },
@@ -464,8 +458,7 @@ namespace SaiyanTransformations
                 Id = "BallGuardian7", DisplayName = "Guardian of the Seven-Star Ball",
                 Subtitle = "The last sphere is the worst defended by far",
                 MineLevel = 290, Reward = BossReward.DragonBall, DragonBallNumber = 7,
-                Squad = new[] { MonsterKind.ShadowBrute, MonsterKind.ShadowBrute,
-                                MonsterKind.ShadowBrute, MonsterKind.ShadowBrute },
+                Squad = new[] { MonsterKind.ShadowBrute },
                 HealthMultiplier = 1.5f, DamageMultiplier = 1.35f, Resilience = 11,
                 Scale = 0.88f, AuraColor = new Color(255, 170, 60), SpriteSheet = "guardian"
             },
