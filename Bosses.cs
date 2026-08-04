@@ -1225,14 +1225,20 @@ namespace SaiyanTransformations
             ModEntry.Notify("It refuses to fall.");
         }
 
-        /// <summary>Phases a boss actually runs. Any non-guardian boss that was not given an
-        /// explicit phase count still gets one, so it hits a "stops holding back" phase near
-        /// death; the Dragon Ball guardians are the deliberate exception.</summary>
+        /// <summary>Phases a boss actually runs. A lone boss that was not given an explicit
+        /// phase count still gets one, so it hits a "stops holding back" phase near death.
+        /// The exceptions never phase: Dragon Ball guardians, and any multi-body squad - a
+        /// group has no single boss to power up, and each member would announce the phase
+        /// separately, which just spams the toast.</summary>
         private static int EffectivePhaseCount(BossDefinition def)
         {
+            if (def.Reward == BossReward.DragonBall)
+                return 0;
+            if (def.Squad != null && def.Squad.Length > 1)
+                return 0;
             if (def.PhaseCount > 0)
                 return def.PhaseCount;
-            return def.Reward == BossReward.DragonBall ? 0 : 1;
+            return 1;
         }
 
         /// <summary>Major bosses power up as their health falls. Each phase hits harder and
