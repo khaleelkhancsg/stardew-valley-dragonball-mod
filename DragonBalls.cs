@@ -239,7 +239,12 @@ namespace SaiyanTransformations
 
                 case Phase.Asking:
                     Game1.player.canMove = false;
-                    // waits for the dialogue callback
+                    // waits for the dialogue callback. If our wish question got replaced by
+                    // another dialogue mid-ritual (e.g. picking up an artifact), its callback
+                    // never fires and the player would be locked here forever - so once the
+                    // interrupting menu closes, put the wish question back up.
+                    if (Game1.activeClickableMenu == null && !Game1.eventUp && !Game1.fadeToBlack)
+                        this.AskForWish();
                     break;
 
                 case Phase.Fading:
