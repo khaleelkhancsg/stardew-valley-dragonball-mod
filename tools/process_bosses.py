@@ -131,7 +131,11 @@ def build(name, kind, fw, fh, rows):
     sheet = Image.new("RGBA", (4*fw, nrows*fh), (0,0,0,0))
     for row in range(nrows):
         facing = ROW_FACING[row % len(ROW_FACING)]
-        flip = facing == 3            # left is the right-side art mirrored
+        # The source "RIGHT SIDE" row is drawn facing LEFT (the character's right side is
+        # shown). The game reads row 1 for AnimateRight and row 3 for AnimateLeft as dedicated
+        # rows (no auto-flip), so the RIGHT row must be the source mirrored to face right, and
+        # the LEFT row is the source in its natural left-facing orientation.
+        flip = facing == 1            # right = the left-facing source art, mirrored
         src_facing = 1 if facing == 3 else facing
         frames = facings.get(src_facing) or facings.get(2) or []
         for col in range(4):
