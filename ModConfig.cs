@@ -295,6 +295,20 @@ namespace SaiyanTransformations
         /// <summary>Scales every form's drain rate.</summary>
         public float StaminaDrainScale { get; set; } = 1.0f;
 
+        /// <summary>Each form soaks a share of incoming damage - a defensive counterpart to
+        /// its attack multiplier that also grows with mastery. Set to a fraction of the attack
+        /// bonus (see FormDefenseFraction) and fed through diminishing returns, so even the
+        /// strongest forms cannot become invulnerable.</summary>
+        public bool EnableFormDefense { get; set; } = true;
+
+        /// <summary>Portion of a form's attack bonus that becomes defense. 0.5 = "half the
+        /// attack multiplier": Super Saiyan (attack x1.5, a +0.5 bonus) starts around 20%
+        /// damage reduction, climbing with mastery.</summary>
+        public float FormDefenseFraction { get; set; } = 0.5f;
+
+        /// <summary>Hard cap on a form's damage reduction, so it can never trivialise a fight.</summary>
+        public float FormDefenseMaxReduction { get; set; } = 0.6f;
+
         /// <summary>Chance for Ultra Instinct to evade an incoming hit entirely.</summary>
         public float UltraInstinctDodgeChance { get; set; } = 0.5f;
 
@@ -477,5 +491,9 @@ namespace SaiyanTransformations
 
         /// <summary>Continuous aura roar while transformed.</summary>
         public bool AuraLoopSound { get; set; } = true;
+
+        /// <summary>Volume of the continuous aura roar, 0-1. Lowered by default so the
+        /// constant hum is easier to live with over a long session.</summary>
+        public float AuraLoopVolume { get; set; } = 0.5f;
     }
 }

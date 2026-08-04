@@ -43,7 +43,10 @@ MAP = {
  # invader excluded: dark-on-dark source does not key cleanly; keeps its placeholder
 }
 ROWS = {"GreenSlime":7,"SquidKid":4,"ShadowBrute":8,"Mummy":5}
-ROW_FACING = [2,1,0]  # cycles: down(front), right(right), up(back)
+# Standard 4-direction layout: down, right, up, left. The left row is the right-side art
+# mirrored, so a monster that reads a dedicated left row shows a correctly-facing profile
+# instead of missing/duplicated frames (bosses that "could only turn one way").
+ROW_FACING = [2,1,0,3]  # down(front), right, up(back), left(=mirrored right)
 
 def key_white(im):
     a = np.array(im.convert("RGBA"))
@@ -103,11 +106,13 @@ def crop(a, c):
         sub = sub[ys.min():ys.max()+1, xs.min():xs.max()+1]
     return Image.fromarray(sub, "RGBA")
 
-def fit_cell(spr, fw, fh, scale):
+def fit_cell(spr, fw, fh, scale, flip=False):
     # scale is uniform across every frame of a boss, so the character keeps one height
     cell = Image.new("RGBA", (fw, fh), (0,0,0,0))
     w,h = max(1,int(round(spr.width*scale))), max(1,int(round(spr.height*scale)))
     s = spr.resize((w,h), Image.LANCZOS)
+    if flip:
+        s = s.transpose(Image.FLIP_LEFT_RIGHT)
     x = (fw - w)//2
     y = fh - h            # bottom-align (feet at cell bottom)
     cell.alpha_composite(s, (x,y))
@@ -126,11 +131,13 @@ def build(name, kind, fw, fh, rows):
     sheet = Image.new("RGBA", (4*fw, nrows*fh), (0,0,0,0))
     for row in range(nrows):
         facing = ROW_FACING[row % len(ROW_FACING)]
-        frames = facings.get(facing) or facings.get(2) or []
+        flip = facing == 3            # left is the right-side art mirrored
+        src_facing = 1 if facing == 3 else facing
+        frames = facings.get(src_facing) or facings.get(2) or []
         for col in range(4):
             if not frames: continue
             spr = frames[col % len(frames)]
-            cell = fit_cell(crop_cache[spr], fw, fh, scale)
+            cell = fit_cell(crop_cache[spr], fw, fh, scale, flip)
             sheet.alpha_composite(cell, (col*fw, row*fh))
     sheet.save(os.path.join(TMP, name+".png"))
     return sheet

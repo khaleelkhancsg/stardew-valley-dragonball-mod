@@ -1225,22 +1225,33 @@ namespace SaiyanTransformations
             ModEntry.Notify("It refuses to fall.");
         }
 
+        /// <summary>Phases a boss actually runs. Any non-guardian boss that was not given an
+        /// explicit phase count still gets one, so it hits a "stops holding back" phase near
+        /// death; the Dragon Ball guardians are the deliberate exception.</summary>
+        private static int EffectivePhaseCount(BossDefinition def)
+        {
+            if (def.PhaseCount > 0)
+                return def.PhaseCount;
+            return def.Reward == BossReward.DragonBall ? 0 : 1;
+        }
+
         /// <summary>Major bosses power up as their health falls. Each phase hits harder and
         /// moves faster, and the last phase can hand the boss a brand-new move.</summary>
         private void CheckPhase(Monster monster, BossDefinition def)
         {
-            if (def.PhaseCount <= 0 || monster.MaxHealth <= 0)
+            int phaseCount = EffectivePhaseCount(def);
+            if (phaseCount <= 0 || monster.MaxHealth <= 0)
                 return;
 
             int done = 0;
             if (monster.modData.TryGetValue(PhaseKey, out string s))
                 int.TryParse(s, out done);
-            if (done >= def.PhaseCount)
+            if (done >= phaseCount)
                 return;
 
             // thresholds spaced evenly: 2 phases -> 66% and 33%
             float fraction = (float)monster.Health / monster.MaxHealth;
-            float threshold = 1f - ((done + 1f) / (def.PhaseCount + 1f));
+            float threshold = 1f - ((done + 1f) / (phaseCount + 1f));
             if (fraction > threshold)
                 return;
 
@@ -1251,13 +1262,13 @@ namespace SaiyanTransformations
             monster.resilience.Value += 2;
 
             // the final phase can grant a new ability the boss did not start with
-            if (done >= def.PhaseCount && def.PhaseAbility != BossAbility.None)
+            if (done >= phaseCount && def.PhaseAbility != BossAbility.None)
                 monster.modData[BossAbilityRunner.PhaseAbilityKey] = ((int)def.PhaseAbility).ToString();
 
             Owner.PlayCue("boss_roar", "shadowpeep");
             if (Owner.Config.ScreenFlash)
                 Game1.flashAlpha = 0.6f;
-            ModEntry.Notify(done >= def.PhaseCount
+            ModEntry.Notify(done >= phaseCount
                 ? $"{def.DisplayName} stops holding back!"
                 : $"{def.DisplayName}'s power surges!");
         }
@@ -1466,8 +1477,8 @@ namespace SaiyanTransformations
             {
                 Portrait = false,
                 Text = $"Technique learned: {Owner.TechniqueName(techniqueId)}!  "
-                       + $"Press {Owner.Config.KamehamehaKey} to use it, "
-                       + $"{Owner.Config.SwitchTechniqueKey} to cycle between techniques."
+                       + $"Press {Owner.KeyLabel(Owner.Config.KamehamehaKey)} to use it, "
+                       + $"{Owner.KeyLabel(Owner.Config.SwitchTechniqueKey)} to cycle between techniques."
             });
         }
 

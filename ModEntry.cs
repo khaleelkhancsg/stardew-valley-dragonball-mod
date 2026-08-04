@@ -175,6 +175,9 @@ namespace SaiyanTransformations
             gmcm.AddBoolOption(m, () => this.Config.ParryReflect, v => this.Config.ParryReflect = v, () => "Parry deflects ki blasts");
 
             gmcm.AddSectionTitle(m, () => "Mastery & passives");
+            gmcm.AddBoolOption(m, () => this.Config.EnableFormDefense, v => this.Config.EnableFormDefense = v, () => "Forms reduce incoming damage");
+            gmcm.AddNumberOption(m, () => this.Config.FormDefenseFraction, v => this.Config.FormDefenseFraction = v, () => "Defense = this x attack bonus", null, 0f, 1f, 0.05f);
+            gmcm.AddNumberOption(m, () => this.Config.FormDefenseMaxReduction, v => this.Config.FormDefenseMaxReduction = v, () => "Max form damage reduction", null, 0f, 0.95f, 0.05f);
             gmcm.AddBoolOption(m, () => this.Config.EnableMasteryBonuses, v => this.Config.EnableMasteryBonuses = v, () => "Mastery carries over to all forms");
             gmcm.AddNumberOption(m, () => this.Config.MasteryAttackBonusPerForm, v => this.Config.MasteryAttackBonusPerForm = v, () => "Attack bonus per mastered form", null, 0f, 0.5f, 0.05f);
             gmcm.AddNumberOption(m, () => this.Config.MasteryDefenseBonusPerForm, v => this.Config.MasteryDefenseBonusPerForm = v, () => "Defense bonus per mastered form", null, 0, 20, 1);
@@ -211,6 +214,7 @@ namespace SaiyanTransformations
             gmcm.AddBoolOption(m, () => this.Config.ShowKiBar, v => this.Config.ShowKiBar = v, () => "Show ki bar");
             gmcm.AddBoolOption(m, () => this.Config.ShowPowerLevel, v => this.Config.ShowPowerLevel = v, () => "Show power level");
             gmcm.AddBoolOption(m, () => this.Config.ScreenFlash, v => this.Config.ScreenFlash = v, () => "Screen flash");
+            gmcm.AddNumberOption(m, () => this.Config.AuraLoopVolume, v => this.Config.AuraLoopVolume = v, () => "Aura hum volume", null, 0f, 1f, 0.05f);
         }
 
         /// <summary>Apply a one-click difficulty preset by overwriting the boss scaling dials.
@@ -376,7 +380,14 @@ namespace SaiyanTransformations
         {
             ModEntry.StopLoop(ref this.auraCue);
             if (this.Config.AuraLoopSound)
+            {
                 this.auraCue = this.PlayLoop("aura_loop");
+                if (this.auraCue != null)
+                {
+                    try { this.auraCue.Volume = MathHelper.Clamp(this.Config.AuraLoopVolume, 0f, 1f); }
+                    catch (Exception) { }
+                }
+            }
         }
 
         /// <summary>A fully mastered form runs "calm" — no visible aura, no electric
@@ -550,6 +561,45 @@ namespace SaiyanTransformations
         internal string TechniqueName(string techniqueId)
         {
             return this.Techniques.NameOf(techniqueId);
+        }
+
+        /// <summary>A short, plain-text label for a keybind, e.g. "Shift+R", safe to drop into
+        /// a dialogue box. The raw KeybindList text did not render cleanly (it showed as
+        /// stray glyphs), so this builds a clean ASCII label from the first bound combo.</summary>
+        internal string KeyLabel(KeybindList keys)
+        {
+            if (keys != null)
+            {
+                foreach (Keybind kb in keys.Keybinds)
+                {
+                    if (!kb.IsBound)
+                        continue;
+                    var sb = new System.Text.StringBuilder();
+                    foreach (SButton b in kb.Buttons)
+                    {
+                        if (sb.Length > 0)
+                            sb.Append('+');
+                        sb.Append(ShortButton(b));
+                    }
+                    if (sb.Length > 0)
+                        return sb.ToString();
+                }
+            }
+            return "(unbound)";
+        }
+
+        private static string ShortButton(SButton b)
+        {
+            switch (b)
+            {
+                case SButton.LeftShift:
+                case SButton.RightShift: return "Shift";
+                case SButton.LeftControl:
+                case SButton.RightControl: return "Ctrl";
+                case SButton.LeftAlt:
+                case SButton.RightAlt: return "Alt";
+                default: return b.ToString();
+            }
         }
 
         internal void GrantFormUnlock(int formIndex)
@@ -951,6 +1001,20 @@ namespace SaiyanTransformations
                 }
             }
 
+            // a form's own toughness soaks a share of whatever damage is left: a defensive
+            // counterpart to its attack multiplier that also climbs with mastery
+            if (lost > 0 && form != null && this.Config.EnableFormDefense)
+            {
+                float reduction = this.FormDamageReduction(form);
+                int soak = (int)(lost * reduction);
+                if (soak > 0)
+                {
+                    player.health = Math.Min(player.maxHealth, health + soak);
+                    health = player.health;
+                    lost -= soak;
+                }
+            }
+
             if (lost > 0 && form != null && form.DodgeChance > 0f
                 && this.Ki.CanAfford(this.Config.UltraInstinctDodgeEnergyCost)
                 && Game1.random.NextDouble() < this.EffectiveDodgeChance(form))
@@ -967,6 +1031,22 @@ namespace SaiyanTransformations
             }
 
             this.lastHealth = health;
+        }
+
+        /// <summary>A form's passive damage reduction: a fraction of its attack bonus (per
+        /// FormDefenseFraction - "half the attack multiplier" by default), amplified by mastery,
+        /// then run through diminishing returns and capped so no form becomes invulnerable.</summary>
+        internal float FormDamageReduction(Transformation form)
+        {
+            if (form == null || !this.Config.EnableFormDefense)
+                return 0f;
+
+            float attackBonus = Math.Max(0f, form.AttackMultiplier - 1f);
+            float factor = attackBonus * Math.Max(0f, this.Config.FormDefenseFraction);
+            factor *= 1f + this.Progress.MasteryFraction(form);   // up to double at full mastery
+            float reduction = factor / (1f + factor);             // diminishing returns, always < 1
+            float cap = MathHelper.Clamp(this.Config.FormDefenseMaxReduction, 0f, 0.95f);
+            return MathHelper.Clamp(reduction, 0f, cap);
         }
 
         /// <summary>A ki-cost dash: a short blink in the direction you are moving (diagonals
@@ -1181,8 +1261,19 @@ namespace SaiyanTransformations
                 return;
 
             string name = Transformation.All[this.announcedUnlocks].DisplayName;
-            this.ShowNarration($"A new power awakens: {name}!  Press {this.Config.TransformKey} to "
-                               + "ascend toward it - at your highest form, press it again to power down.");
+            string msg = $"A new power awakens: {name}!  Press {this.KeyLabel(this.Config.TransformKey)} "
+                         + "to ascend toward it - at your highest form, press it again to power down.";
+
+            // the very first unlock doubles as a controls primer, so the dash and guard binds
+            // are shown at least once
+            if (this.announcedUnlocks == 0)
+            {
+                msg += $"  Controls: {this.KeyLabel(this.Config.DashKey)} to dash, "
+                       + $"hold {this.KeyLabel(this.Config.BlockKey)} to guard (tap it as a hit lands to parry), "
+                       + $"and hold {this.KeyLabel(this.Config.ChargeKey)} while still to charge ki.";
+            }
+
+            this.ShowNarration(msg);
             this.PlayCue("unlock", "yoba");
             if (this.Config.ScreenFlash)
                 Game1.flashAlpha = 1f;
