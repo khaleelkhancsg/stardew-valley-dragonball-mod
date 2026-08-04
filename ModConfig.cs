@@ -492,6 +492,14 @@ namespace SaiyanTransformations
         /// <summary>Continuous aura roar while transformed.</summary>
         public bool AuraLoopSound { get; set; } = true;
 
+        /// <summary>Nudge the Super Saiyan 3 mane toward the back of the head when facing
+        /// sideways, so it seats on the head instead of floating forward. Done at draw time
+        /// (the hair sprite is untouched, nothing is clipped).</summary>
+        public bool FixSaiyanSideHair { get; set; } = true;
+
+        /// <summary>How many source pixels to shift the SSJ3 side hair by.</summary>
+        public int SaiyanSideHairOffsetPx { get; set; } = 3;
+
         /// <summary>Volume of the continuous aura roar, 0-1. Lowered by default so the
         /// constant hum is easier to live with over a long session.</summary>
         public float AuraLoopVolume { get; set; } = 0.5f;

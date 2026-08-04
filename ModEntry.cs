@@ -40,6 +40,9 @@ namespace SaiyanTransformations
             "boss_roar", "boss_defeat", "dodge"
         };
 
+        /// <summary>Set in Entry so Harmony patches (which must be static) can reach config.</summary>
+        internal static ModEntry Instance;
+
         internal ModConfig Config;
         internal Texture2D AuraTexture;
         internal Texture2D LightningTexture;
@@ -90,6 +93,7 @@ namespace SaiyanTransformations
 
         public override void Entry(IModHelper helper)
         {
+            Instance = this;
             this.Config = helper.ReadConfig<ModConfig>();
             this.Fx = new FxRenderer(this);
             this.Techniques = new TechniqueManager(this, this.Fx);
@@ -123,6 +127,19 @@ namespace SaiyanTransformations
                 "Saiyan Transformations.\n\n"
                 + "Usage: saiyan status | unlock_all | form <1-6> | off | bosses | clearboss | pose <n>",
                 this.OnCommand);
+
+            // draw-time hair nudge (see HairOffsetPatch). Wrapped so a signature mismatch in a
+            // future game version just skips the cosmetic patch instead of breaking the mod.
+            try
+            {
+                var harmony = new HarmonyLib.Harmony(this.ModManifest.UniqueID);
+                harmony.PatchAll();
+            }
+            catch (Exception ex)
+            {
+                this.Monitor.Log($"Could not apply the hair-offset patch; hair will draw normally. "
+                                 + $"({ex.Message})", LogLevel.Warn);
+            }
         }
 
         // ------------------------------------------------------------ setup
@@ -215,6 +232,8 @@ namespace SaiyanTransformations
             gmcm.AddBoolOption(m, () => this.Config.ShowPowerLevel, v => this.Config.ShowPowerLevel = v, () => "Show power level");
             gmcm.AddBoolOption(m, () => this.Config.ScreenFlash, v => this.Config.ScreenFlash = v, () => "Screen flash");
             gmcm.AddNumberOption(m, () => this.Config.AuraLoopVolume, v => this.Config.AuraLoopVolume = v, () => "Aura hum volume", null, 0f, 1f, 0.05f);
+            gmcm.AddBoolOption(m, () => this.Config.FixSaiyanSideHair, v => this.Config.FixSaiyanSideHair = v, () => "Seat SSJ3 side hair");
+            gmcm.AddNumberOption(m, () => this.Config.SaiyanSideHairOffsetPx, v => this.Config.SaiyanSideHairOffsetPx = v, () => "SSJ3 side hair shift (px)", null, 0, 8, 1);
         }
 
         /// <summary>Apply a one-click difficulty preset by overwriting the boss scaling dials.
