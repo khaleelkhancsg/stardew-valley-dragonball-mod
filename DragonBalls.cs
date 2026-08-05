@@ -21,8 +21,16 @@ namespace SaiyanTransformations
 
         public int WishesGranted { get; set; }
 
-        /// <summary>Permanent ki capacity surrendered to the dragon.</summary>
+        /// <summary>Permanent flat ki capacity surrendered to the dragon. Deprecated in favour
+        /// of the percentage toll below; kept so old saves still deserialize.</summary>
         public float KiCapacityToll { get; set; }
+
+        /// <summary>Permanent bonus to max ki granted by wishes, as a fraction of your total
+        /// (0.4 = +40%). Percentage rather than flat so wishes stay valuable deep in the run.</summary>
+        public float KiBonusPercent { get; set; }
+
+        /// <summary>Permanent max-ki toll taken by wishes past the free ones, as a fraction.</summary>
+        public float KiTollPercent { get; set; }
     }
 
     /// <summary>Dragon Ball items, the summoning ritual, and the wishes.</summary>
@@ -355,8 +363,8 @@ namespace SaiyanTransformations
             string toll = string.Empty;
             if (this.Wishes.WishesGranted > Math.Max(0, Owner.Config.FreeWishes))
             {
-                this.Wishes.KiCapacityToll += Math.Max(0f, Owner.Config.KiTollPerWish);
-                toll = $"\n\nSomething is taken in exchange: {Owner.Config.KiTollPerWish:0} "
+                this.Wishes.KiTollPercent += Math.Max(0f, Owner.Config.KiTollPercentPerWish);
+                toll = $"\n\nSomething is taken in exchange: {Owner.Config.KiTollPercentPerWish * 100f:0}% "
                        + "of your ki capacity, permanently.";
             }
 
@@ -381,23 +389,24 @@ namespace SaiyanTransformations
             {
                 case "power":
                     this.Wishes.BonusAttackMultiplier += 1.0f;
-                    Owner.Progress.GrantPowerBonus(80f, 0f);
+                    this.Wishes.KiBonusPercent += 0.40f;
                     return "Your ki roars. Every transformation now hits "
                            + $"{this.Wishes.BonusAttackMultiplier:0.#}x harder on top of its own "
-                           + "multiplier, and your ki reserves swell.";
+                           + "multiplier, and your maximum ki swells by 40%.";
 
                 case "body":
                     player.maxHealth += 300;
                     player.health = player.maxHealth;
                     player.maxStamina.Value += 400;
                     player.Stamina = player.MaxStamina;
-                    Owner.Progress.GrantPowerBonus(120f, 0.05f);
-                    return "Your body is remade. +300 max health, +400 max energy, a far deeper "
-                           + "ki well and harder strikes - all permanent.";
+                    this.Wishes.KiBonusPercent += 0.60f;
+                    Owner.Progress.GrantPowerBonus(0f, 0.05f);
+                    return "Your body is remade. +300 max health, +400 max energy, +60% max ki "
+                           + "and harder strikes - all permanent.";
 
                 case "riches":
-                    player.Money += 2000000;
-                    return "Gold rains from nowhere. 2,000,000g.";
+                    player.Money += 10000000;
+                    return "Gold rains from nowhere. 10,000,000g.";
 
                 case "mastery":
                 {
@@ -420,28 +429,31 @@ namespace SaiyanTransformations
                     if (unlocked >= Transformation.All.Length)
                     {
                         player.Money += 1500000;
-                        Owner.Progress.GrantPowerBonus(150f, 0.1f);
+                        this.Wishes.KiBonusPercent += 0.75f;
+                        Owner.Progress.GrantPowerBonus(0f, 0.1f);
                         return "There is nothing left to awaken - so raw power is poured in "
-                               + "instead, and 1,500,000g with it.";
+                               + "instead: +75% max ki and 1,500,000g.";
                     }
                     Owner.GrantFormUnlock(unlocked);
-                    Owner.Progress.GrantPowerBonus(60f, 0.03f);
+                    this.Wishes.KiBonusPercent += 0.30f;
+                    Owner.Progress.GrantPowerBonus(0f, 0.03f);
                     return $"{Transformation.All[unlocked].DisplayName} awakens within you, "
-                           + "and your ki grows to hold it.";
+                           + "and your ki grows 30% to hold it.";
                 }
 
                 case "endless":
                     if (this.Wishes.FreeTransformations)
                     {
                         player.Money += 1500000;
-                        Owner.Progress.GrantPowerBonus(120f, 0.05f);
+                        this.Wishes.KiBonusPercent += 0.60f;
+                        Owner.Progress.GrantPowerBonus(0f, 0.05f);
                         return "You are already tireless - so the dragon deepens your ki "
-                               + "instead, and leaves 1,500,000g.";
+                               + "instead: +60% max ki and 1,500,000g.";
                     }
                     this.Wishes.FreeTransformations = true;
-                    Owner.Progress.GrantPowerBonus(60f, 0f);
+                    this.Wishes.KiBonusPercent += 0.30f;
                     return "Exhaustion loses its grip. Transformations no longer drain ki, "
-                           + "and your reserves deepen besides.";
+                           + "and your reserves deepen by 30%.";
 
                 default:
                     player.Money += 500000;

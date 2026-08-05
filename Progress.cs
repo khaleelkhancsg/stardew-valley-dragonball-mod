@@ -153,6 +153,16 @@ namespace SaiyanTransformations
                 : 0f;
         }
 
+        /// <summary>Fractional boost to the active-charge ki restore rate from mastery, summed
+        /// across every mastered form (0.2 = +20%). Stacks the same way the other carryover
+        /// bonuses do.</summary>
+        public float MasteryChargeRateBonus()
+        {
+            return Owner.Config.EnableMasteryBonuses
+                ? this.TotalMasteryWeight() * Math.Max(0f, Owner.Config.MasteryChargeBonusPerForm)
+                : 0f;
+        }
+
         /// <summary>A permanent power gain handed out by a boss "power cache". It rides the
         /// same Zenkai bonus fields, so it feeds straight into max ki and the attack buff and
         /// persists with the save.</summary>

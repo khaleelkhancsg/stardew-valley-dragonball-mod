@@ -144,6 +144,11 @@ namespace SaiyanTransformations
         /// <summary>Max ki added per fully-mastered form.</summary>
         public float MasteryKiBonusPerForm { get; set; } = 15f;
 
+        /// <summary>Bonus to the active-charge ki restore rate per fully-mastered form
+        /// (0.2 = +20%), stacking across every mastered form. Rewards mastery with faster
+        /// recovery when you hold the charge stance.</summary>
+        public float MasteryChargeBonusPerForm { get; set; } = 0.20f;
+
         /// <summary>Permanent bumps for surviving a near-death fight.</summary>
         public bool EnableZenkai { get; set; } = true;
 
@@ -276,11 +281,10 @@ namespace SaiyanTransformations
         /// <summary>Wishes past this many demand a trial before the dragon will listen.</summary>
         public int FreeWishes { get; set; } = 3;
 
-        /// <summary>Permanent ki capacity surrendered per wish past the free ones.
-        /// Deliberately not a gold cost, since one of the wishes grants gold. Kept small now
-        /// that a full ball gather is a ~290-floor run, so a hard-won wish is not half-eaten
-        /// by its own toll.</summary>
-        public float KiTollPerWish { get; set; } = 6f;
+        /// <summary>Permanent max-ki fraction surrendered per wish past the free ones
+        /// (0.05 = 5%). A percentage rather than a flat amount so the toll scales with your
+        /// pool the same way the wish bonuses do.</summary>
+        public float KiTollPercentPerWish { get; set; } = 0.05f;
 
         /// <summary>Capacity can never be tolled below this.</summary>
         public float MinimumBaseKi { get; set; } = 40f;

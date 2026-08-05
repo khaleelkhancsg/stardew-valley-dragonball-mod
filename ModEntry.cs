@@ -182,6 +182,7 @@ namespace SaiyanTransformations
             gmcm.AddNumberOption(m, () => this.Config.MasteryAttackBonusPerForm, v => this.Config.MasteryAttackBonusPerForm = v, () => "Attack bonus per mastered form", null, 0f, 0.5f, 0.05f);
             gmcm.AddNumberOption(m, () => this.Config.MasteryDefenseBonusPerForm, v => this.Config.MasteryDefenseBonusPerForm = v, () => "Defense bonus per mastered form", null, 0, 20, 1);
             gmcm.AddNumberOption(m, () => this.Config.MasteryKiBonusPerForm, v => this.Config.MasteryKiBonusPerForm = v, () => "Max ki per mastered form", null, 0f, 60f, 5f);
+            gmcm.AddNumberOption(m, () => this.Config.MasteryChargeBonusPerForm, v => this.Config.MasteryChargeBonusPerForm = v, () => "Charge rate per mastered form", null, 0f, 1f, 0.05f);
 
             gmcm.AddSectionTitle(m, () => "Bosses");
             gmcm.AddBoolOption(m, () => this.Config.EnableBosses, v => this.Config.EnableBosses = v, () => "Enable bosses");
@@ -720,11 +721,16 @@ namespace SaiyanTransformations
             int dmgReduction = (int)Math.Round(this.FormDamageReduction(form) * 100f);
             string defenseLine = dmgReduction > 0 ? $"Damage reduction: {dmgReduction}%" : null;
 
+            // mastery's charge-rate bonus, likewise applied in code
+            int chargePct = (int)Math.Round(this.Progress.MasteryChargeRateBonus() * 100f);
+            string chargeLine = chargePct > 0 ? $"Charge rate: +{chargePct}%" : null;
+
             string description = form.Description
                                  + (string.IsNullOrEmpty(form.Passive) ? "" : "\nPassive: " + form.Passive)
                                  + "\n" + masteryLine
                                  + (carryLine != null ? "\n" + carryLine : "")
-                                 + (defenseLine != null ? "\n" + defenseLine : "");
+                                 + (defenseLine != null ? "\n" + defenseLine : "")
+                                 + (chargeLine != null ? "\n" + chargeLine : "");
 
             Game1.player.applyBuff(new Buff(
                 id: BuffId(form),

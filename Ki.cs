@@ -48,8 +48,14 @@ namespace SaiyanTransformations
                 float baseMax = Owner.Config.BaseMaxKi
                                 + (Owner.DeepestMineLevel() * Owner.Config.KiPerMineLevel)
                                 + Owner.Progress.State.ZenkaiKiBonus
-                                + Owner.Progress.MasteryGlobalKiBonus()
-                                - Owner.DragonBalls.State.KiCapacityToll;
+                                + Owner.Progress.MasteryGlobalKiBonus();
+
+                // wishes add and take away max ki as a fraction of the whole pool, so both the
+                // reward and the toll scale with how strong you already are
+                float wishFactor = 1f
+                                   + Owner.DragonBalls.State.KiBonusPercent
+                                   - Owner.DragonBalls.State.KiTollPercent;
+                baseMax *= Math.Max(0.1f, wishFactor);
 
                 baseMax = Math.Max(Owner.Config.MinimumBaseKi, baseMax);
 
@@ -264,7 +270,10 @@ namespace SaiyanTransformations
             if (!this.charging)
                 return;
 
-            this.Restore(Owner.Config.ActiveKiPerSecond * dt);
+            // mastery makes the charge stance restore faster, stacking per mastered form
+            float rate = Owner.Config.ActiveKiPerSecond
+                         * (1f + Owner.Progress.MasteryChargeRateBonus());
+            this.Restore(rate * dt);
             if (this.Current >= this.Max)
                 this.StopCharging();
         }
