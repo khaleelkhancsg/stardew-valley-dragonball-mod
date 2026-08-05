@@ -578,7 +578,7 @@ namespace SaiyanTransformations
                     foreach (SButton b in kb.Buttons)
                     {
                         if (sb.Length > 0)
-                            sb.Append('+');
+                            sb.Append('-');   // NB: '+' renders as a glyph in dialogue boxes
                         sb.Append(ShortButton(b));
                     }
                     if (sb.Length > 0)
@@ -715,10 +715,16 @@ namespace SaiyanTransformations
                 ? $"Mastery bonus (all forms): +{carryAtk}% attack, +{this.Progress.MasteryGlobalDefenseBonus()} def"
                 : null;
 
+            // the form's damage reduction is applied in code, not as a vanilla buff stat, so
+            // surface it in the tooltip the way the other stats are shown
+            int dmgReduction = (int)Math.Round(this.FormDamageReduction(form) * 100f);
+            string defenseLine = dmgReduction > 0 ? $"Damage reduction: {dmgReduction}%" : null;
+
             string description = form.Description
                                  + (string.IsNullOrEmpty(form.Passive) ? "" : "\nPassive: " + form.Passive)
                                  + "\n" + masteryLine
-                                 + (carryLine != null ? "\n" + carryLine : "");
+                                 + (carryLine != null ? "\n" + carryLine : "")
+                                 + (defenseLine != null ? "\n" + defenseLine : "");
 
             Game1.player.applyBuff(new Buff(
                 id: BuffId(form),
