@@ -5,7 +5,10 @@ Player hair cells are a fixed 16x32, three stacked rows (front / right / back); 
 mirrors the right row for the left facing, so only one side piece is needed.
 
 Each piece is fitted inside a box rather than scaled to a fixed width, so a tall piece
-cannot overflow the cell, and each is centred so nothing is ever clipped at an edge.
+cannot overflow the cell. The front and back pieces are centred; the side piece is nudged
+back by SIDE_DX so the mane seats on the skull instead of floating behind it. That nudge
+costs the rearmost column of the mane, which is the deliberate trade: centring the side
+piece keeps every pixel but pushes the hair forward over the face.
 """
 
 import numpy as np
@@ -22,6 +25,7 @@ FIT_FRONT = (16, 20)
 FIT_SIDE = (16, 26)
 FIT_BACK = (16, 24)
 TOP = 1                     # top margin inside the cell
+SIDE_DX = -3                # the side piece sits 3px back from centre, onto the skull
 
 
 def extract(path):
@@ -48,8 +52,8 @@ def extract(path):
     return [keyed.crop((x0, y0, x1 + 1, y1 + 1)) for x0, y0, x1, y1 in boxes[:4]]
 
 
-def place(piece, fit, flip=False):
-    """Fit inside the box, sharpen back the detail the downscale costs, centre in the cell."""
+def place(piece, fit, flip=False, dx=0):
+    """Fit inside the box, sharpen back the detail the downscale costs, seat it in the cell."""
     max_w, max_h = fit
     scale = min(max_w / piece.width, max_h / piece.height)
     w = max(1, round(piece.width * scale))
@@ -59,12 +63,12 @@ def place(piece, fit, flip=False):
     if flip:
         img = img.transpose(Image.FLIP_LEFT_RIGHT)
     cell = Image.new("RGBA", (CW, CH), (0, 0, 0, 0))
-    cell.alpha_composite(img, ((CW - w) // 2, TOP))     # centred: never clipped
+    cell.alpha_composite(img, ((CW - w) // 2 + dx, TOP))
     return cell
 
 
 def clipped(cell):
-    """Opaque pixels sitting on a cell edge, which would read as a cut-off silhouette."""
+    """Opaque pixels sitting on a cell edge, reported so a change to the fit is visible."""
     left = sum(1 for y in range(CH) if cell.getpixel((0, y))[3] > 0)
     right = sum(1 for y in range(CH) if cell.getpixel((CW - 1, y))[3] > 0)
     return left, right
@@ -75,7 +79,7 @@ def main():
 
     cells = {
         0: place(front, FIT_FRONT),
-        1: place(side_r, FIT_SIDE, flip=True),   # flipped so the profile faces right
+        1: place(side_r, FIT_SIDE, flip=True, dx=SIDE_DX),   # flipped so the profile faces right
         2: place(back, FIT_BACK),
     }
 
@@ -84,8 +88,7 @@ def main():
         sheet.paste(cell, (COL * CW, row * CH))
         l, r = clipped(cell)
         name = {0: "front", 1: "side ", 2: "back "}[row]
-        flag = "  <-- TOUCHING EDGE" if (l or r) else ""
-        print(f"{name}: edge pixels left={l} right={r}{flag}")
+        print(f"{name}: edge pixels left={l} right={r}")
     sheet.save(SHEET)
     print("wrote", SHEET)
 
