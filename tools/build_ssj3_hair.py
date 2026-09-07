@@ -1,31 +1,35 @@
-"""Rebuild the Super Saiyan 3 column of assets/saiyanhair.png from the hand-drawn source.
+"""Rebuild the Super Saiyan 3 side cell of assets/saiyanhair.png from the hand-drawn source.
 
-The source sheet holds four pieces in a 2x2 grid: front, back, and two side profiles.
+Each source sheet holds four pieces in a 2x2 grid: front, back, and two side profiles.
 Player hair cells are a fixed 16x32, three stacked rows (front / right / back); the game
 mirrors the right row for the left facing, so only one side piece is needed.
 
-Each piece is fitted inside a box rather than scaled to a fixed width, so a tall piece
-cannot overflow the cell. The front and back pieces are centred; the side piece is nudged
-back by SIDE_DX so the mane seats on the skull instead of floating behind it. That nudge
-costs the rearmost column of the mane, which is the deliberate trade: centring the side
-piece keeps every pixel but pushes the hair forward over the face.
+Only the side row is written. The first side drawing had no forward fringe, so the brow
+stayed bare whatever the placement; SRC_SIDE is the redraw that adds one, and it is wider
+in proportion, hence its own fit box. The front and back cells still come from SRC and are
+deliberately left untouched.
+
+A piece is fitted inside a box rather than scaled to a fixed width, so a tall piece cannot
+overflow the cell. FIT_SIDE is set so the fitted mane covers the whole scalp while touching
+neither cell edge, which would show as a straight cut through the silhouette.
 """
 
 import numpy as np
 from PIL import Image, ImageFilter
 from scipy import ndimage
 
-SRC = r"C:/Users/khale/Downloads/stardew images/ssj3 hair.png"
+SRC = r"C:/Users/khale/Downloads/stardew images/ssj3 hair.png"           # front and back
+SRC_SIDE = r"C:/Users/khale/Downloads/stardew images/ssj3  updated.png"  # side, with a fringe
 SHEET = r"C:/Users/khale/Documents/Claude projects/SaiyanTransformations/assets/saiyanhair.png"
 COL = 2                     # Super Saiyan 3 is the third hairstyle in the sheet
 CW, CH = 16, 32             # one hair cell
 
 # (max width, max height) each piece is fitted into, in cell pixels
 FIT_FRONT = (16, 20)
-FIT_SIDE = (16, 26)
+FIT_SIDE = (14, 26)
 FIT_BACK = (16, 24)
 TOP = 1                     # top margin inside the cell
-SIDE_DX = -3                # the side piece sits 3px back from centre, onto the skull
+SIDE_DX = 0                 # the redrawn side piece seats on the skull centred
 
 
 def extract(path):
@@ -75,20 +79,13 @@ def clipped(cell):
 
 
 def main():
-    front, back, _side_l, side_r = extract(SRC)
-
-    cells = {
-        0: place(front, FIT_FRONT),
-        1: place(side_r, FIT_SIDE, flip=True, dx=SIDE_DX),   # flipped so the profile faces right
-        2: place(back, FIT_BACK),
-    }
+    _front, _back, _side_l, side_r = extract(SRC_SIDE)
+    cell = place(side_r, FIT_SIDE, flip=True, dx=SIDE_DX)    # flipped so the profile faces right
 
     sheet = Image.open(SHEET).convert("RGBA")
-    for row, cell in cells.items():
-        sheet.paste(cell, (COL * CW, row * CH))
-        l, r = clipped(cell)
-        name = {0: "front", 1: "side ", 2: "back "}[row]
-        print(f"{name}: edge pixels left={l} right={r}")
+    sheet.paste(cell, (COL * CW, CH))                        # row 1 only; front and back stay put
+    l, r = clipped(cell)
+    print(f"side: edge pixels left={l} right={r}")
     sheet.save(SHEET)
     print("wrote", SHEET)
 
