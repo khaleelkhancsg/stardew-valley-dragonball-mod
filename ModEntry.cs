@@ -59,7 +59,7 @@ namespace SaiyanTransformations
         private int burstTicks;
         private int announcedUnlocks = -1;
         private ICue auraCue;
-        private BossManager Bosses;
+        internal BossManager Bosses;
         internal DragonBallManager DragonBalls;
         internal KiManager Ki;
         internal ProgressManager Progress;
@@ -1688,6 +1688,31 @@ namespace SaiyanTransformations
                 NPC speaker = new NPC(null, new Vector2(-2000f, -2000f), "", 0,
                                       displayName ?? "???", false, portrait);
                 speaker.displayName = displayName ?? "???";
+                Game1.DrawDialogue(new Dialogue(speaker, null, speech));
+            }
+            catch (Exception)
+            {
+                Game1.drawObjectDialogue(speech);   // portrait-less fallback
+            }
+        }
+
+        /// <summary>Show a line the player says back, in a dialogue box with the farmer's own
+        /// name and portrait, so an encounter reads as a conversation rather than a monologue.
+        /// The portrait comes from assets/portraits/_player.png, so it can be redrawn like any
+        /// boss portrait.</summary>
+        internal void ShowPlayerSpeech(string speech)
+        {
+            if (string.IsNullOrEmpty(speech))
+                return;
+            string name = Game1.player?.Name;
+            if (string.IsNullOrEmpty(name))
+                name = "You";
+            try
+            {
+                Texture2D portrait = this.GetBossPortrait("_player");
+                NPC speaker = new NPC(null, new Vector2(-2000f, -2000f), "", 0,
+                                      name, false, portrait);
+                speaker.displayName = name;
                 Game1.DrawDialogue(new Dialogue(speaker, null, speech));
             }
             catch (Exception)

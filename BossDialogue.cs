@@ -3,23 +3,26 @@ using StardewValley;
 
 namespace SaiyanTransformations
 {
-    /// <summary>One beat of a boss encounter, split in two voices:
+    /// <summary>One beat of a boss encounter, in up to three voices, shown in this order:
     /// <list type="bullet">
-    /// <item><description><see cref="Narration"/> - the external narrator, shown as a toast.
-    /// Scene-setting and lore, never spoken by the boss or the player.</description></item>
-    /// <item><description><see cref="Speech"/> - the boss's own words, shown in an NPC-style
-    /// dialogue box with the boss's portrait.</description></item>
+    /// <item><description><see cref="Narration"/> - the narrator, a plain dialogue box.
+    /// Scene-setting only; never spoken by anyone.</description></item>
+    /// <item><description><see cref="Speech"/> - the boss, with its portrait.</description></item>
+    /// <item><description><see cref="Player"/> - the farmer answering back, with their own
+    /// portrait, so an encounter reads as a conversation instead of a monologue.</description></item>
     /// </list>
-    /// Either half may be null: wordless monsters get narration only.</summary>
+    /// Any of the three may be null.</summary>
     internal sealed class Beat
     {
         public readonly string Narration;
         public readonly string Speech;
+        public readonly string Player;
 
-        public Beat(string narration, string speech)
+        public Beat(string narration, string speech, string player = null)
         {
             this.Narration = narration;
             this.Speech = speech;
+            this.Player = player;
         }
     }
 
@@ -32,9 +35,38 @@ namespace SaiyanTransformations
         public Beat Defeat;
     }
 
-    /// <summary>The full script. The narrator carries the through-line: the wish scattered
-    /// deep in the mine bleeds power up through the rock, a signal that crosses death and the
-    /// seams between worlds, and it has drawn the fallen down to meet whoever is bending fate.</summary>
+    /// <summary>The script.
+    ///
+    /// THE STORY, plainly:
+    ///
+    /// Something at the bottom of the mine is torn. The wall between the living world and
+    /// wherever the dead go has worn through down there, and seven wish-granting spheres fell
+    /// through it long ago and lodged at intervals up the shaft. Their power is what holds the
+    /// tear open.
+    ///
+    /// Three things follow from that, and every boss states one of them out loud:
+    ///  1. The dead leak back in. Fighters who died elsewhere reform inside the mine, and the
+    ///     tear only holds them as far as their own floor - none of them can climb, none can
+    ///     leave. Kill one and it reforms in about forty days, angrier and stronger.
+    ///  2. The tear leaks power upward. That is what is changing the player: the ki, the forms.
+    ///     It is on loan from the hole in the world.
+    ///  3. All seven spheres together grant a wish, and a wish would put any one of them back
+    ///     in the living world properly. None of them can carry the spheres past their own
+    ///     floor. The player can. That is the only reason they are all so interested.
+    ///
+    /// The cost: every wish widens the tear. Bojack says so out loud at floor 200, and that is
+    /// the turn of the story - after it, the player knows their wishes are the thing letting
+    /// worse things through, and keeps going anyway.
+    ///
+    /// The God of Destruction at the bottom was supposed to erase this wound before it started
+    /// letting the dead back in. He decided watching was more interesting. He is the reason any
+    /// of it happened, and beating him does not make him fix it.
+    ///
+    /// The Multiversal Invader (see Invader.cs) is what the widened tear finally lets through:
+    /// something alive, from a universe that already ended.
+    ///
+    /// The player is a farmer. They answer everything plainly, get steadily more tired and more
+    /// certain, and never once talk like a hero.</summary>
     internal static class BossDialogue
     {
         public static BossLines For(string id)
@@ -61,33 +93,33 @@ namespace SaiyanTransformations
                 },
                 ["CellSemiPerfect"] = new[]
                 {
-                    "Semi-Perfect Cell reknits itself, seething at the interruption.",
-                    "So close to perfect - it will not be stopped one form short.",
+                    "Semi-Perfect Cell reknits itself, furious at the interruption.",
+                    "So close to whole - it will not stop one component short.",
                 },
                 ["CellPerfect"] = new[]
                 {
-                    "Perfect Cell reassembles without a mark. Did you think perfection could die?",
-                    "Every cell remembers its shape; Perfect Cell simply puts itself back.",
+                    "Perfect Cell reassembles without a mark. Of course it does.",
+                    "Every cell remembers its shape. It simply puts itself back.",
                 },
                 ["BuuFat"] = new[]
                 {
                     "The pink scatter pulls itself together. Fat Buu giggles.",
-                    "Buu is not done playing with you yet.",
+                    "Buu is not finished playing.",
                 },
                 ["SuperBuu"] = new[]
                 {
                     "Super Buu flows back into one piece, smiling wider.",
-                    "The steam gathers, hardens, and Super Buu stands again.",
+                    "The steam gathers, hardens, and Super Buu stands up again.",
                 },
                 ["BuuSuperGohan"] = new[]
                 {
-                    "Super Buu reforms, calm and unhurried - it has all the time there is.",
-                    "A demigod's power knits the pieces back together without effort.",
+                    "Super Buu reforms, calm and unhurried. It has all the time there is.",
+                    "The pieces knit themselves back without any effort at all.",
                 },
                 ["MetalCoolerLegion"] = new[]
                 {
-                    "Where one falls, the Big Gete Star feeds it back. Another Cooler rises.",
-                    "The Legion does not run out of bodies.",
+                    "The machine below feeds the broken pattern back. Another Cooler stands up.",
+                    "The Big Gete Star does not run out of copies.",
                 },
                 ["KidBuu"] = new[]
                 {
@@ -96,339 +128,510 @@ namespace SaiyanTransformations
                 },
             };
 
-        // beat builders: N = narration only, S = speech only, B = both
-        private static Beat N(string narration) => new Beat(narration, null);
-        private static Beat S(string speech) => new Beat(null, speech);
-        private static Beat B(string narration, string speech) => new Beat(narration, speech);
+        // beat builders. N = narrator, S = boss, P = player.
+        private static Beat N(string narration) => new Beat(narration, null, null);
+        private static Beat NP(string narration, string player) => new Beat(narration, null, player);
+        private static Beat SP(string speech, string player) => new Beat(null, speech, player);
+        private static Beat NSP(string narration, string speech, string player)
+            => new Beat(narration, speech, player);
+        private static Beat NS(string narration, string speech) => new Beat(narration, speech, null);
 
         private static readonly Dictionary<string, BossLines> Table =
             new Dictionary<string, BossLines>
             {
-                // =========================================================== Saiyan saga
+                // ====================================================== floors 10-90: the Force
                 ["Saibamen"] = new BossLines
                 {
-                    Meet = N("The soil splits. Green things claw up out of it - seeded here, long ago, to greet whatever came bending fate this deep."),
-                    Rematch2 = N("The same crop, sprouting again. It remembers being cut."),
-                    Rematch3 = N("The soil is barren now, yet still they come: fewer, meaner, grown wrong in the dark."),
-                    RematchLoop = N("The dirt coughs up another handful of green spite. It will never stop sprouting for you."),
-                    Defeat = N("The last Saibaman bursts like a struck gourd. Whatever seeded them now knows you are coming.")
+                    Meet = NP("The tunnel floor splits and green things haul themselves out of it, screeching. Six of them, in a row, all facing the way down.",
+                              "These were planted. Facing up the shaft, like a fence. Someone down there wanted a warning line."),
+                    Rematch2 = NP("The same green crop, pushing up through the same holes.",
+                                  "Forty days and they are back. Nothing down here stays dead. I should have expected that by now."),
+                    Rematch3 = NP("Fewer this time, and bigger. Whatever is in the soil is feeding them.",
+                                  "They are growing on whatever leaks up from below. Same as everything else down here."),
+                    RematchLoop = NP("The dirt coughs up another handful of green spite.",
+                                     "Every season, same fence. Fine. I know the way through it."),
+                    Defeat = NP("The last one bursts. Below the broken soil the shaft keeps going down.",
+                                "That was not a guard. That was a fence, and I have just walked through it.")
                 },
                 ["Guldo"] = new BossLines
                 {
-                    Meet = B("A squat, four-eyed thing plants its feet - the Ginyu Force's smallest, and its first offering.",
-                             "Guldo, of the Ginyu Force. I would stop time and end you politely, but the Captain insists we fight fair. Pity."),
-                    Rematch2 = S("You beat ME? The others will never let me hear the end of it. Again!"),
-                    Rematch3 = S("I have been practising holding my breath. Time will stop this time, digger."),
-                    RematchLoop = S("The Force sends its smallest first. Do not mistake that for its weakest."),
-                    Defeat = B("Guldo pops, out of time at last, and the trick of a thrown disc is left behind in your hands.",
-                               "I needed... one more second...")
+                    Meet = NSP("A short, four-eyed soldier is standing at the bottom of the ladder with his arms folded, as if he has been there for years.",
+                               "Guldo. Ginyu Force. Spare me the confusion - I died a very long way from this rock. The hole at the bottom of your mine spat me back out, and it will not let me climb one floor higher than this one.",
+                               "So you are stuck. On floor twenty. That is why you are still here."),
+                    Rematch2 = SP("You again. Do you have any idea how long forty days is when you cannot leave one room?",
+                                  "About a growing season. You get used to those."),
+                    Rematch3 = SP("I have had nothing to do but practise holding my breath. Today time stops.",
+                                  "It did not stop the last two times either."),
+                    RematchLoop = SP("The Force sends its smallest up first. That is not an insult, it is a rota.",
+                                     "Same floor, same fight. Let us get on with it."),
+                    Defeat = NSP("Guldo comes apart, and the trick of a thrown disc is left behind in your hands.",
+                                 "One... more... second...",
+                                 "You had forty days. Spend the next lot better.")
                 },
                 ["Nappa"] = new BossLines
                 {
-                    Meet = B("A mountain of a Saiyan rolls his neck, bored down to the bone.",
-                             "Rotting down here, and finally someone worth standing up for. Don't die too fast - I've waited a long time."),
-                    Rematch2 = S("You again. I've been training on the rocks. Let's see if it took."),
-                    Rematch3 = S("Third round. I actually look forward to these. Don't tell anyone."),
-                    RematchLoop = S("Same time as always, eh? Fine by me. Nappa doesn't get bored twice."),
-                    Defeat = B("He topples, almost pleased to have lost to something real.",
-                               "Tch... you're... actually strong-")
+                    Meet = NSP("An enormous Saiyan is sitting against the wall with his eyes shut. He does not get up until he is certain you are real.",
+                               "Name is Nappa. Do you know what it is like being dead in a hole with nothing worth hitting? I have been counting rocks. Do not die quickly - I have waited a long time for this.",
+                               "I came down here for copper."),
+                    Rematch2 = SP("Good. You are back. I have been punching the wall for practice and the wall is getting boring.",
+                                  "You hit harder than last time. The wall must be helping."),
+                    Rematch3 = SP("Third time. Honestly? This is the best part of being dead.",
+                                  "That is a bleak thing to say, Nappa."),
+                    RematchLoop = SP("Same floor, same season. I do not get bored twice.",
+                                     "Neither do I, apparently."),
+                    Defeat = NSP("He topples over, almost pleased about it.",
+                                 "Tch. You are... actually strong.",
+                                 "Get some rest. You will be back in a month.")
                 },
                 ["Jeice"] = new BossLines
                 {
-                    Meet = B("A red-skinned fighter flicks his white mane, half of a duo that is missing its other half.",
-                             "The Red Magma, Jeice! Burter's around here somewhere. Let's see if you're worth the Crusher."),
-                    Rematch2 = S("Back? Burter warned me you were stubborn. He's usually wrong. Not today."),
-                    Rematch3 = S("Third go. I've stopped waiting for Burter and started fighting for real."),
-                    RematchLoop = S("The Force never really disbands, mate. We just keep queueing up for you."),
-                    Defeat = B("Jeice goes down alone, calling a name that does not answer.",
-                               "Buuurter-! ...he's not coming, is he.")
+                    Meet = NSP("A red-skinned fighter is pacing the same twenty feet of tunnel, glancing over his shoulder for someone who never arrives.",
+                               "Jeice. The Red Magma. My partner is two floors down and I cannot reach him - none of us can move off our own level. I have been shouting his name for a year. You will have to do instead.",
+                               "You are all penned in separately. That is deliberate."),
+                    Rematch2 = SP("Still cannot get to him. Still can get to you.",
+                                  "If I reach him, I will tell him you are shouting."),
+                    Rematch3 = SP("Did you see him? Is he still fast?",
+                                  "He is still fast. He said he can hear you some nights."),
+                    RematchLoop = SP("Tell him I am holding my floor. Tell him I said it properly.",
+                                     "I will tell him. I always do."),
+                    Defeat = NSP("Jeice goes down alone, calling a name that does not answer.",
+                                 "Buuurter - ... he cannot hear me, can he.",
+                                 "No. But he is still down there, and he is still holding his.")
                 },
                 ["EliteWarrior"] = new BossLines
                 {
-                    Meet = B("An elite Saiyan looks you over and refuses, pointedly, to raise his power.",
-                             "A lowborn, glowing gold? You wear it like it's yours. I won't need to reach for mine, not for you."),
-                    Rematch2 = S("I have replayed our fight a thousand times in this dark. This time I do not underestimate you."),
-                    Rematch3 = S("You keep climbing down to me. Either you respect me, or you are a fool. Let's find out."),
-                    RematchLoop = S("We are a ritual now, you and I. Draw your ki. I'll be waiting where I always am."),
-                    Defeat = B("The arrogance goes out of him, and with it a way to cross distance in a blink - now yours.",
-                               "Impossible... a third-class...")
+                    Meet = NSP("A Saiyan in cracked armour watches you come down the ladder, and very deliberately does not raise his power.",
+                               "A farmhand wearing gold. Do you even know what that is? It is the shaft doing it to you. The deeper you go the more the hole down there pushes into you. Mine I earned. I will not need to reach for it.",
+                               "So it is the mine. That is what has been happening to me."),
+                    Rematch2 = SP("I have replayed our fight a thousand times down here. There is nothing else to do. This time I do not underestimate you.",
+                                  "Then we are even. I have been training too."),
+                    Rematch3 = SP("You keep climbing down to me. That is either respect or stupidity.",
+                                  "It is habit. Most farming is."),
+                    RematchLoop = SP("We are a ritual now, you and I. Draw your ki.",
+                                     "Same place, same time. Go on then."),
+                    Defeat = NSP("The arrogance goes out of him, and a way of crossing distance in a blink goes out with it, into you.",
+                                 "Impossible. A third-class-",
+                                 "I am a farmer. I am not even that.")
                 },
                 ["Burter"] = new BossLines
                 {
-                    Meet = B("A tall blue fighter is suddenly, impossibly, already beside you.",
-                             "Burter. Fastest in the universe. You won't see the hits - you'll just feel them, in order, very quickly."),
-                    Rematch2 = S("Jeice fell to you. That makes this personal. And fast."),
-                    Rematch3 = S("I've gotten faster. I am always getting faster. Try to keep up."),
-                    RematchLoop = S("Blink and I've lapped you twice. Standard Force procedure."),
-                    Defeat = B("Even Burter runs out of speed in the end.",
-                               "...too... slow...")
+                    Meet = NSP("The tunnel is empty. Then it is not: a tall blue fighter is standing beside you, and was not, a moment ago.",
+                               "Burter. Fastest in the universe, and it does me no good whatsoever. I can cross this floor a thousand times a second and I still cannot reach the next one. Jeice is up there. I hear him some nights.",
+                               "He is still calling for you. I told him you were down here."),
+                    Rematch2 = SP("You told him. He stopped shouting for a week. Then he started again.",
+                                  "He is stubborn. You would like that about him if you could hear it."),
+                    Rematch3 = SP("Faster now. I am always getting faster. It never gets me anywhere.",
+                                  "I know that feeling better than I would like to."),
+                    RematchLoop = SP("Blink and I have lapped you twice. It is the only thing I have got left.",
+                                     "It is a good thing to have. Come on."),
+                    Defeat = NSP("Even Burter runs out of speed eventually.",
+                                 "...too... slow...",
+                                 "I will tell him you held your floor. He will want to know.")
                 },
                 ["Recoome"] = new BossLines
                 {
-                    Meet = B("A hulking orange brute strikes a pose, one leg raised, and holds it.",
-                             "Naaame's Recoome, of the Ginyu Force! It rhymes with DOOM. You'll want to watch the whole routine."),
-                    Rematch2 = S("You interrupted the routine last time. This time you watch it to the END."),
-                    Rematch3 = S("I added new poses. TEN of them. You'll be here a while."),
-                    RematchLoop = S("Recoome's Command Performance, encore number... I've lost count. Sit DOWN."),
-                    Defeat = B("He goes down mid-flex, deeply, personally offended.",
-                               "...my best... pose...")
+                    Meet = NSP("An enormous orange fighter is mid-pose when you arrive, and holds it, clearly waiting for you to appreciate it.",
+                               "Naaame is RECOOME! Rhymes with DOOM! Nobody has watched the routine in forty years down here, so you are going to watch ALL of it.",
+                               "...Do I have to watch all of it?"),
+                    Rematch2 = SP("You interrupted last time. This time you watch it to the END.",
+                                  "Fine. Show me the routine."),
+                    Rematch3 = SP("I have added ten new poses. TEN.",
+                                  "You have had a great deal of time down here, haven't you."),
+                    RematchLoop = SP("Command Performance, encore number - I have lost count. SIT DOWN.",
+                                     "I am sitting. Go on then."),
+                    Defeat = NSP("He goes down mid-flex, personally offended.",
+                                 "...my best... pose...",
+                                 "It was a good pose. I mean that.")
                 },
                 ["CaptainGinyu"] = new BossLines
                 {
-                    Meet = B("He lands last of all, in perfect formation with no one, having watched you dismantle his Force one by one.",
-                             "CAPTAIN GINYU! You've cut down my squad piece by piece. Now face the man who trained them - and mind you don't let me touch you."),
-                    Rematch2 = S("You return, and my Force with grudges. Behold: the reunion special!"),
-                    Rematch3 = S("Three times now. I could take your body and end this - but where is the showmanship in that?"),
-                    RematchLoop = S("The Ginyu Force is eternal, digger. So is this routine."),
-                    Defeat = B("The Captain topples, unable to swap bodies in time, and the wild long-maned fury he guarded pours into you.",
-                               "A fine body, wasted on- urk.")
+                    Meet = NSP("He lands in perfect formation with absolutely no one, having felt every one of his squad go down on the floors above him.",
+                               "CAPTAIN GINYU. I felt them fall. Guldo, Jeice, Burter, Recoome, one floor at a time, and I could not climb a single step to help any of them. You did that. So you will understand my enthusiasm.",
+                               "They all told me the same thing. That they could not reach each other."),
+                    Rematch2 = SP("My Force reforms with me, floor by floor, each of them with a grudge. Behold: the reunion special!",
+                                  "They are not up there with you, Captain. They are alone, same as you."),
+                    Rematch3 = SP("Third time. I could take your body and walk out of this mine wearing it.",
+                                  "Then why haven't you?"),
+                    RematchLoop = SP("Because the hole will not let me leave in any body but my own. Believe me, I have tried it.",
+                                     "So we are both stuck. Just differently."),
+                    Defeat = NSP("The Captain topples, unable to swap out in time, and a wild long-maned fury pours into you.",
+                                 "A fine body - wasted on-",
+                                 "It was never the body you wanted. It was the way out.")
                 },
 
-                // =========================================================== Frieza saga
+                // ====================================================== floors 100-150: the family
                 ["FriezaFirst"] = new BossLines
                 {
-                    Meet = B("A small horned figure floats up, entirely unbothered by you.",
-                             "My first form, and already past your reach. I have three more. You will not meet them all - but I may show you the light before you go."),
-                    Rematch2 = S("Persistent vermin. I have not even changed shape for you. Yet."),
-                    Rematch3 = S("Third time in my lowest form. You should feel insulted that it is enough."),
-                    RematchLoop = S("I keep this shape for you especially. It amuses me to win small."),
-                    Defeat = B("He recoils, astonished to be losing in this form, and the blinding flare he hoarded unfolds into your understanding.",
-                               "Impossible... in this form...")
+                    Meet = NSP("A small horned figure floats a foot off the tunnel floor, entirely unbothered by you.",
+                               "You have been climbing down murdering my employees. How industrious. I am Frieza. This is the smallest shape I own, and down here it is still more than enough for a farmhand.",
+                               "You are pinned to this floor like the rest of them. That is why you are only this."),
+                    Rematch2 = SP("Persistent vermin. I have not even changed shape for you.",
+                                  "You cannot. Not this high up. The strong ones are further down - I have been counting."),
+                    Rematch3 = SP("A third time in my lowest form. You should be insulted that it suffices.",
+                                  "I am not insulted. I am taking notes."),
+                    RematchLoop = SP("I keep this shape for you especially. It amuses me to win small.",
+                                     "You have not won one yet."),
+                    Defeat = NSP("He recoils, astonished, and a blinding flare unfolds into your understanding.",
+                                 "Impossible - in this form-",
+                                 "There are more of you further down, aren't there.")
                 },
                 ["CoolerFirst"] = new BossLines
                 {
-                    Meet = B("Colder than the emperor, and far quieter, a fourth-form tyrant regards you with mild distaste.",
-                             "Frieza announces himself. I simply arrive. You've been carving through my little brother's kind - now try his better half."),
-                    Rematch2 = S("My brother's killer, back again. He would be jealous of the attention."),
-                    Rematch3 = S("Third time. Frieza never learned a thing from losing to you. I am not Frieza."),
-                    RematchLoop = S("The family business, it seems, is losing to you. I mean to break the tradition."),
-                    Defeat = B("Cooler's certainty cracks, exactly as his brother's did, one floor above.",
-                               "I am the superior brother. I am-")
+                    Meet = NSP("Colder than his brother and much quieter. He does not bother announcing himself.",
+                               "Frieza announces. I arrive. You have been carving through my brother's leavings, and I am the better line of the family.",
+                               "Brothers. Two floors apart. And neither of you can climb to the other."),
+                    Rematch2 = SP("My brother's killer, back again. He would be jealous of the attention.",
+                                  "He is two floors up. You could tell him yourself, if you could walk it."),
+                    Rematch3 = SP("Frieza learned nothing from losing to you. I am not Frieza.",
+                                  "You keep saying that. He keeps saying it too."),
+                    RematchLoop = SP("The family business appears to be losing to you. I intend to break the tradition.",
+                                     "Same time next season, then."),
+                    Defeat = NSP("Cooler's certainty cracks, exactly the way his brother's did, two floors up.",
+                                 "I am the superior brother. I am-",
+                                 "You are both in the same hole. That is the whole family resemblance.")
                 },
                 ["FriezaFinal"] = new BossLines
                 {
-                    Meet = B("The armour is gone, the horns and bulk all shed - and in surpassing him you feel god ki answer, close and cold.",
-                             "This is the shape that killed a planet. You climbed past my first form; you will not climb past this one."),
-                    Rematch2 = S("You. The one who bloodied my first form and lived. This time I began at the end."),
-                    Rematch3 = S("Third audience in my final form. Do you collect near-deaths?"),
-                    RematchLoop = S("No more forms to hide behind, and still I am here. So are you. Curious."),
-                    Defeat = B("He is wrong that there is nothing beyond - but that lesson waits on a deeper floor. Beating him, you take hold of god ki.",
-                               "This is my FINAL form - there is nothing beyond-!")
+                    Meet = NSP("The armour is gone, and the horns, and the bulk. What is left is small, white and completely still - and standing near it you feel something old answer in your chest.",
+                               "You have spheres, farmer. Seven of them makes a wish, and a wish would put any one of us back in the living world properly. None of us can carry them past our own floor. You can. That is the only reason you are still breathing this deep.",
+                               "So none of you actually want me dead. You want me finished."),
+                    Rematch2 = SP("The one who bloodied my first form and lived. This time I began at the end.",
+                                  "You are stronger this far down. All of you are. It is the hole, not you."),
+                    Rematch3 = SP("Do you collect near-deaths, farmer?",
+                                  "I collect the spheres. You are standing between me and one."),
+                    RematchLoop = SP("No forms left to hide behind, and still I am here. So are you.",
+                                     "Neither of us gets to stop. That is the arrangement."),
+                    Defeat = NSP("He is wrong that there is nothing beyond - that lesson is waiting further down. Beating him, you take hold of god ki.",
+                                 "This is my FINAL form - there is nothing beyond-!",
+                                 "There is a gold one. And a black one. Your employees talk.")
                 },
                 ["CoolerFinal"] = new BossLines
                 {
-                    Meet = B("A form Frieza never reached uncoils itself, one step past the family's best.",
-                             "My brother stopped at his final shape. I went further. Everything he was, and more."),
-                    Rematch2 = S("You felled the form beyond my brother's best. I will simply have to be more."),
-                    Rematch3 = S("Third meeting. I begin to think you are the family curse made flesh."),
-                    RematchLoop = S("One form past Frieza, and still we share the same ending against you. Infuriating."),
-                    Defeat = B("Final-form Cooler falls a single step past his brother, and no further.",
-                               "The form beyond his... was not... enough...")
+                    Meet = NSP("A shape his brother never managed uncoils in the dark.",
+                               "Frieza stopped at his final form. I did not. Everything he was, and one step further.",
+                               "And still one floor, same as him. One step further into the same hole."),
+                    Rematch2 = SP("You felled the form past my brother's best. I shall simply have to be more.",
+                                  "There is always more down here. That is the problem with this place."),
+                    Rematch3 = SP("I begin to think you are the family curse made flesh.",
+                                  "I am a farmer with a pickaxe and a schedule."),
+                    RematchLoop = SP("One form past Frieza, and the same ending against you every time. Infuriating.",
+                                     "Tell him about it. Oh - you cannot."),
+                    Defeat = NSP("Final-form Cooler falls one step past his brother, and no further.",
+                                 "The form beyond his... was not... enough...",
+                                 "It never is. Not down here.")
                 },
 
-                // =========================================================== Cell saga
+                // ====================================================== floors 170-190: the design
                 ["CellImperfect"] = new BossLines
                 {
-                    Meet = B("A hunched, insectoid thing crouches over the tunnel, still drinking the life out of the walls.",
-                             "Not yet complete. But complete enough for you. Hold still - I only need a little more."),
-                    Rematch2 = S("You interrupted my meal last time. I have found other sources. I am closer now."),
-                    Rematch3 = S("Third time, and further along each time. Soon there will be no imperfect left to fight."),
-                    RematchLoop = S("I am always becoming. You are always just in time to slow it. Barely."),
-                    Defeat = N("The imperfect thing bursts before it can finish. Somewhere deeper, its perfected self stirs at the loss.")
+                    Meet = NSP("Something hunched and insectoid is crouched against the wall with its tail buried in the rock, drinking.",
+                               "Do not stop me. I am drinking what leaks up this shaft and I am nearly whole. Everything down here feeds on it. You are simply the first thing that has fed on it and kept walking.",
+                               "That is what has been changing me. It is changing you too. We are drinking from the same wound."),
+                    Rematch2 = SP("You interrupted my meal. I found other seams. I am closer now.",
+                                  "You are all feeding on the same hole. None of you seem to mind sharing."),
+                    Rematch3 = SP("Further along each time. Soon there is no imperfect left to fight.",
+                                  "Then I will keep coming back before then."),
+                    RematchLoop = SP("I am always becoming. You are always just in time to slow it.",
+                                     "That appears to be the job."),
+                    Defeat = NP("The imperfect thing bursts before it can finish. Deeper down, a completed version of it feels the loss.",
+                                "There is a finished one of you further down. I felt it flinch.")
                 },
                 ["CellSemiPerfect"] = new BossLines
                 {
-                    Meet = B("Taller now, almost handsome, badly balanced on a body one component short of whole.",
-                             "One android from perfection, and you stand in the way of it. I have waited far too long to be complete."),
-                    Rematch2 = S("Still one short, and still you come. I am so close I can taste the symmetry."),
-                    Rematch3 = S("Third time in this half-finished shape. I begin to think you enjoy the incomplete."),
-                    RematchLoop = S("Semi-perfect is still more than you will ever be. Remember that as you die."),
-                    Defeat = N("The half-finished form ruptures. Perfection remains, for now, a floor deeper down.")
+                    Meet = NSP("Taller now, almost handsome, and badly balanced on a body one component short of whole.",
+                               "One part from complete, and that part is not in this mine and never will be. Do you understand what that is? To be permanently almost?",
+                               "I am beginning to, yes."),
+                    Rematch2 = SP("Still one short. Still you come.",
+                                  "You have had forty days to make peace with it."),
+                    Rematch3 = SP("Third time in this half-finished shape. I think you enjoy the incomplete.",
+                                  "I think you are stuck. Same as everyone here. It is not personal."),
+                    RematchLoop = SP("Semi-perfect is still more than you will ever be.",
+                                     "And still not enough to get out."),
+                    Defeat = NP("The half-finished form ruptures. Perfection is waiting a little further down.",
+                                "Two of you now. There will be a third.")
                 },
                 ["CellJuniors"] = new BossLines
                 {
-                    Meet = B("Small blue horrors spill out, all teeth and no mercy, spat from something that made them to play.",
-                             "Father made us to practise on things that scream. You'll do."),
-                    Rematch2 = N("They are bigger now. Practice does that."),
-                    Rematch3 = N("Bigger still, and they have stopped screaming when they die. They learned that from you."),
-                    RematchLoop = N("A fresh brood, each wearing a little of your own fighting style. Father sends his regards."),
-                    Defeat = N("The last Junior pops. Somewhere, the thing that fathered them feels the loss, and is intrigued.")
+                    Meet = NSP("A small blue thing drops out of the ceiling, all teeth, and giggles at you with its father's mouth.",
+                               "Father made me to practise on things that scream. He is further down. He said to soften you up and watch how you move.",
+                               "He is sending children ahead to take notes."),
+                    Rematch2 = SP("I am bigger now. Practice does that.",
+                                  "You are still a child running his errands."),
+                    Rematch3 = SP("I have stopped screaming when I die. I learned that from you.",
+                                  "That is not something to be proud of. I am sorry."),
+                    RematchLoop = SP("I fight like you now. Father says that is the point of me.",
+                                     "He is watching through you. Of course he is."),
+                    Defeat = NP("The Junior pops. Somewhere below, the thing that fathered it is intrigued.",
+                                "He has been studying me this whole time. Through a child.")
                 },
                 ["CellPerfect"] = new BossLines
                 {
-                    Meet = B("It steps out flawless, symmetrical, smiling - the finished design, and it knows it.",
-                             "Perfect. You met my lesser stages and lived; a mistake I have grown past. There is nothing incomplete about me anymore."),
-                    Rematch2 = S("You unmade perfection once. It regenerated. It remembers. It improved."),
-                    Rematch3 = S("Third bout with the complete article. Even perfect can be practised, it turns out."),
-                    RematchLoop = S("I am the finished design, digger. You are a bug I keep having to close."),
-                    Defeat = B("It regenerates once, twice, then not at all. Beating perfection teaches a stillness bluer than any rage.",
-                               "I am PERFECT, I cannot-")
+                    Meet = NSP("It steps out flawless and symmetrical, and it has very clearly been waiting for you specifically.",
+                               "I have watched you through the small one. I know how you move, how you tire, which way you step when you are hurt. Perfect is not a boast. It is a method.",
+                               "You built a child so you could watch me through its eyes."),
+                    Rematch2 = SP("You unmade perfection once. It regenerated. It remembers. It improved.",
+                                  "So did I. That is how this works now."),
+                    Rematch3 = SP("Even perfect can be practised, it turns out.",
+                                  "That is the first honest thing anyone has said to me down here."),
+                    RematchLoop = SP("You are a flaw I keep having to correct.",
+                                     "And yet here we both are. Again."),
+                    Defeat = NSP("It regenerates once, twice, then not at all. Surviving something this composed teaches a stillness bluer than any rage.",
+                                 "I am PERFECT, I cannot-",
+                                 "You were. Down here that is just one more thing that does not get out.")
                 },
+
+                // ====================================================== floors 200-265: the turn
                 ["Bojack"] = new BossLines
                 {
-                    Meet = B("Broken chains hang from his wrists; the wish leaking up through the rock has loosened a very old seal.",
-                             "Sealed away by cowards once. Your climbing has shaken the walls loose - and the first thing I spend my freedom on is you."),
-                    Rematch2 = S("The seal is weaker every time you come. Soon I won't go back at all."),
-                    Rematch3 = S("Third break-out. Keep coming, digger - you're loosening the chains for me."),
-                    RematchLoop = S("The seal is a formality now. I stay dead only to enjoy escaping. For YOU."),
-                    Defeat = B("His chains reform around a falling shadow, and the reckless red art of overload is left with you.",
-                               "Back... in the dark...")
+                    Meet = NSP("Broken chain-links hang from his wrists. The shaft has been shifting for months, and something has finally worked loose.",
+                               "I was not killed, farmer. I was sealed. And every wish you make on those spheres shakes these walls a little looser. You are the best thing that has happened to me in a thousand years.",
+                               "...The wishes are doing that. Every wish I make opens this place up wider."),
+                    Rematch2 = SP("The seal is weaker every time you come down. Keep wishing.",
+                                  "I have noticed. I am being careful about it now."),
+                    Rematch3 = SP("Third break-out. You are loosening my chains for me and you know it.",
+                                  "I know. I have not decided what to do about that yet."),
+                    RematchLoop = SP("The seal is a formality now. I stay in the dark because I enjoy leaving it.",
+                                     "One day you will be right about that. Not today."),
+                    Defeat = NSP("The chains reform around a falling shadow, and a reckless red art of overload stays behind with you.",
+                                 "Back... in the dark...",
+                                 "For now. I will think harder before the next wish.")
                 },
                 ["Broly"] = new BossLines
                 {
-                    Meet = B("A giant trembles at the tunnel's mouth, muttering one word over and over until he sees you and decides you will do.",
-                             "The legend does not stop. The legend does not tire. The legend has found you."),
-                    Rematch2 = N("The trembling is worse, the muttering louder. There is less of Broly left, and more of the legend."),
-                    Rematch3 = N("He no longer says the name. He says nothing at all. There is nothing left in him to say it with."),
-                    RematchLoop = N("The legend wears a shape that used to be a man. It knows only that you are here, and that is enough."),
-                    Defeat = N("Broly's endless roar finally, briefly, ends.")
+                    Meet = NP("A giant fills the tunnel mouth, shaking, repeating one name under his breath. When he finally sees you, he stops saying it.",
+                              "He is not looking for me. He is looking for someone who is not here, and I will do."),
+                    Rematch2 = NP("The shaking is worse and the name is louder. There is less of the man each time and more of the noise.",
+                                  "He is wearing out. Whatever is left of him is wearing out."),
+                    Rematch3 = NP("He does not say the name any more. There is nothing left in him to say it with.",
+                                  "I am sorry. I do not think you can hear that any more."),
+                    RematchLoop = NP("The shape that used to be a man knows only that you are here.",
+                                     "I know. Come on then."),
+                    Defeat = NP("The endless roar finally, briefly, stops.",
+                                "Rest. Just for a while. You have earned that much.")
                 },
                 ["Dabura"] = new BossLines
                 {
-                    Meet = B("A demon king in a fine cloak considers you with contempt, called up from below by something hungrier than he is.",
-                             "The Majin stirs deeper down and calls the worthy to die for it. I came gladly. Your soul will make a fine statue."),
-                    Rematch2 = S("Death was only a door, digger. I walked back through it for you."),
-                    Rematch3 = S("Hell is dull. You are not. I return, a third time, gladly."),
-                    RematchLoop = S("The Demon Realm spits me back up whenever you dig this deep. We are cursed together, you and I."),
-                    Defeat = B("Dabura crumbles to stone, cursing the master who spent him.",
-                               "The Majin will... swallow you whole-")
+                    Meet = NSP("A demon king in a very good cloak looks you over the way a builder prices a job.",
+                               "I answer to the thing further down - the pink one, the hungry one. It felt you coming and it wants you softened first. I volunteered. Hell is dull and you are not.",
+                               "There is something below you giving orders. Good. That narrows it down."),
+                    Rematch2 = SP("Death is only a door, farmer. I keep walking back through it.",
+                                  "Everyone down here does. It is the one thing this place is good at."),
+                    Rematch3 = SP("Hell is dull. You are not.",
+                                  "That is the nicest thing a demon has said to me."),
+                    RematchLoop = SP("The Demon Realm spits me back up whenever you dig this deep. We are cursed together.",
+                                     "Cursed together. Right. Let us get it over with."),
+                    Defeat = NSP("Dabura crumbles to stone, cursing the master who spent him.",
+                                 "The Majin will swallow you whole-",
+                                 "Then I had better go and meet it.")
                 },
-
-                // =========================================================== Buu saga
                 ["BuuFat"] = new BossLines
                 {
-                    Meet = B("A round, pink, grinning thing bounces once. It does not understand what it is; that is the worst part.",
-                             "Buu play now? Buu turn you into candy. Hee hee."),
-                    Rematch2 = S("You hurt Buu. Buu remember hurt. Buu not so friendly this time."),
-                    Rematch3 = S("Third time you make Buu angry. Angry Buu is a different Buu."),
-                    RematchLoop = S("Buu always come back. Buu cannot be turned to candy. Only you can."),
-                    Defeat = N("Fat Buu deflates with a childish wail - but the anger it swallowed does not die with it.")
+                    Meet = NSP("Something round and pink bounces once and grins at you with no malice at all, which is somehow worse.",
+                               "Ooh! You not rock! You move! Buu been alone in the dark so long. You play with Buu now?",
+                               "...I do not think it knows what it is. That is the worst thing I have seen down here."),
+                    Rematch2 = SP("You hurt Buu. Buu remember hurt now.",
+                                  "I am sorry. There is no way past you that is not through you."),
+                    Rematch3 = SP("Third time you make Buu angry. Angry Buu is a different Buu.",
+                                  "I know. I have met him. He is further down."),
+                    RematchLoop = SP("Buu always come back. Buu cannot be candy. Only you.",
+                                     "Come on then. Gently, if we can."),
+                    Defeat = NP("Fat Buu deflates with a childish wail - and the anger that was inside it does not die with it.",
+                                "It split. The angry part went deeper. I felt it go.")
                 },
                 ["SuperBuu"] = new BossLines
                 {
-                    Meet = B("A leaner, crueller pink shape tilts its head - the rage that split off from the fat one you met above.",
-                             "You smell strong. When I eat you, I'll move like you, hit like you. Hold still - it only hurts until you're me."),
-                    Rematch2 = S("I ate things stronger than last time. I am more now. Are you?"),
-                    Rematch3 = S("Still won't hold still! Fine. I'll wear you down and wear you OUT."),
-                    RematchLoop = S("You always come back tasty. One day I'll finish the meal. Today?"),
-                    Defeat = N("Super Buu deflates with a long, disappointed sigh, having absorbed nothing at all.")
+                    Meet = NSP("A leaner, crueller pink shape tilts its head - the temper that walked out of the round one on the floor above.",
+                               "I came out of the fat one when it finally got angry, and I have been getting hungrier ever since. You smell strong. When I eat you I will move like you.",
+                               "That is why you are all so interested in me. I am the only living thing down here."),
+                    Rematch2 = SP("I ate stronger things than last time. Are you more than last time?",
+                                  "Yes. Unfortunately for both of us."),
+                    Rematch3 = SP("Still will not hold still! I will wear you OUT.",
+                                  "You keep saying that. You keep not doing it."),
+                    RematchLoop = SP("You always come back tasty.",
+                                     "And you always come back hungry. Here we are."),
+                    Defeat = NP("Super Buu deflates with a long, disappointed sigh, having absorbed nothing at all.",
+                                "There is a quieter one below this. I would rather there was not.")
                 },
                 ["BuuSuperGohan"] = new BossLines
                 {
-                    Meet = B("Leaner still, and terribly quiet: this one ate a demigod, and it made him patient. In its calm you feel your own body begin to move without you.",
-                             "The fat one raged, the hungry one copied. I ate better than either, and it made me still. I do not need to rage for you."),
-                    Rematch2 = S("You. The others raged and lost. This one simply waits, and remembers you."),
-                    Rematch3 = S("Third time against the still version of me. You have earned a calm I reserve for gods."),
-                    RematchLoop = S("I have eaten better than you and grown quiet. Your return is the only thing that stirs me."),
-                    Defeat = B("The absorbed calm shatters into a shriek. Surviving a thing this composed teaches the body to move on its own - instinct, ultra and clean.",
-                               "This is not... how it ends for me-")
+                    Meet = NSP("Leaner still, and terribly quiet. This one ate something that could think, and it made it patient.",
+                               "The round one raged. The hungry one copied. I ate better than either and it made me still. I do not need to rage at you. I can wait as long as this mine lasts.",
+                               "That is the difference down here. None of you can leave, so the patient ones win."),
+                    Rematch2 = SP("The others raged and lost. I wait, and I remember you.",
+                                  "I remember you too. That is the trouble with the quiet ones."),
+                    Rematch3 = SP("You have earned a stillness I keep for gods.",
+                                  "There is one of those at the bottom. I have been told."),
+                    RematchLoop = SP("I have eaten better than you and grown quiet. Your return is the only thing that stirs me.",
+                                     "Then let us not keep each other waiting."),
+                    Defeat = NSP("The absorbed calm shatters into a shriek. Surviving something this composed teaches the body to move on its own.",
+                                 "This is not how it ends for me-",
+                                 "It never is. Forty days. I will be here.")
                 },
                 ["MetalCoolerLegion"] = new BossLines
                 {
-                    Meet = B("Cooler's face, over and over, in cold chrome, marching up the shaft in ranks.",
-                             "You broke both his living forms above. The Big Gete Star kept the pattern regardless. Break one of me, and the next steps forward - forever."),
-                    Rematch2 = S("The Star has fabricated improvements. You will not enjoy them."),
-                    Rematch3 = S("Version three. We have studied every scratch you left on us. Efficiency improved."),
-                    RematchLoop = S("The pattern is endless and the Star is patient. Break one Cooler, meet the next. Forever."),
-                    Defeat = N("The last chrome Cooler seizes and dies. For now, the pattern has no more copies to spend.")
+                    Meet = NSP("Cooler's face again, in cold chrome this time, and the walls behind it are stacked with half-built copies of it.",
+                               "You broke both my living forms above. The machine down here kept the pattern regardless. Break this body and it prints another. That is the advantage of not being properly alive.",
+                               "There is a machine down here now. Feeding on the same wound as everything else."),
+                    Rematch2 = SP("The pattern has been improved. You will not enjoy the improvements.",
+                                  "You said that as a person, too."),
+                    Rematch3 = SP("Version three. Every scratch you left has been studied.",
+                                  "Then you already know how this goes."),
+                    RematchLoop = SP("Break one, meet the next. Forever.",
+                                     "Forever is a long time to spend being a copy of your brother."),
+                    Defeat = NP("The chrome seizes and dies. The pattern has, for the moment, run out of copies.",
+                                "Even the machine cannot get out of here. Nothing can.")
                 },
                 ["KidBuu"] = new BossLines
                 {
-                    Meet = B("Small, pink, grinning with nothing behind it - the original, before the fat, before the reason, before restraint.",
-                             "..."),
-                    Rematch2 = N("It reformed out of nothing, as it always does. It does not remember you; it never remembers anyone."),
-                    Rematch3 = N("It has forgotten you again, utterly. To it, this is always the first time. That is the horror of it."),
-                    RematchLoop = N("Pink, grinning, blank. It destroys because it destroys. Fight it a thousand times and be a stranger each one."),
-                    Defeat = N("Kid Buu comes apart in a giggle and does not, this time, put itself back together.")
+                    Meet = NP("Small, pink, grinning at nothing in particular. This is the oldest thing in the shaft: what Buu was before it learned to want anything at all.",
+                              "It does not want the wish. It does not want anything. That is worse than all of them."),
+                    Rematch2 = NP("It reformed out of nothing, the way it always does. It does not remember you.",
+                                  "It never will. Every time is the first time, for it."),
+                    Rematch3 = NP("It has forgotten you utterly. To it, this is always the first meeting.",
+                                  "I would rather be hated. At least being hated is a kind of company."),
+                    RematchLoop = NP("Pink, grinning, blank. It destroys because destroying is what it is.",
+                                     "Nothing to say to you. There is no one in there to say it to."),
+                    Defeat = NP("Kid Buu comes apart in a giggle and does not, this time, put itself back together.",
+                                "That one was never a person. That one was the hole itself, wearing a shape.")
                 },
 
-                // =========================================================== the deep end
+                // ====================================================== floors 280-300: the bottom
                 ["FriezaGolden"] = new BossLines
                 {
-                    Meet = B("Gold light, and a familiar cruelty grown monstrous with training in the dark.",
-                             "You met me weak, up in the shallows, and thought you understood me. Behold what an emperor becomes when he finally bothers to work for it."),
-                    Rematch2 = S("You put down my golden form. Few can say that. None say it twice."),
-                    Rematch3 = S("I have learned to hold the gold longer. Stamina was always my little flaw."),
-                    RematchLoop = S("Down here, in gold, I have all the time in the world to keep meeting you."),
-                    Defeat = B("Golden Frieza falls, and even falling he is certain there is a shade past gold still waiting below.",
-                               "This is not the end of me. There is a colour past gold-")
+                    Meet = NSP("Gold light in the dark, and a familiar cruelty that has very obviously spent every one of its deaths training.",
+                               "You met me weak in the shallows and thought that was me. Do you know what I have done with being dead, farmer? I trained. Every single time you killed me, I came back and I trained.",
+                               "That is what the rest of them should have been doing."),
+                    Rematch2 = SP("You put down my golden form. Few can say that. None say it twice.",
+                                  "We will find out."),
+                    Rematch3 = SP("I have learned to hold the gold longer. Stamina was always my one flaw.",
+                                  "You are the only one down here who has actually got better on purpose."),
+                    RematchLoop = SP("Down here I have all the time in the world to keep meeting you.",
+                                     "So do I. That is exactly the trouble."),
+                    Defeat = NSP("Golden Frieza falls, certain even as he falls that there is a shade past gold still waiting below.",
+                                 "This is not the end of me. There is a colour past gold-",
+                                 "I know. I am going down to meet it.")
                 },
                 ["FriezaBlack"] = new BossLines
                 {
-                    Meet = B("No aura at all. Just black, and quiet, and certain - the shape that surpassed everyone without a sound.",
-                             "You have beaten every form I ever wore: first, final, gold. This is the last one. I did not train for gold. I trained for you."),
-                    Rematch2 = S("You beat black. Then I was not yet black enough. Now I am."),
-                    Rematch3 = S("Three times against the form that surpassed everyone. You are the exception I keep making."),
-                    RematchLoop = S("There is nothing past this, digger. Only me, again, and again, and worse."),
-                    Defeat = N("Black Frieza goes still without a sound. Far below, on a throne of fallen stone, a god takes notice.")
+                    Meet = NSP("No aura at all. Just black, and quiet, and entirely certain.",
+                               "First form. Final form. Gold. You have beaten every shape I own, and each time I went back into the dark and worked. This one I did not train for power. I trained it for you, specifically.",
+                               "You spent a hundred deaths on me. I am not sure whether that is flattering."),
+                    Rematch2 = SP("You beat black. Then I was not black enough.",
+                                  "You will say that again next time, too."),
+                    Rematch3 = SP("Three times against the form that surpassed everyone. You are the exception I keep making.",
+                                  "I am the only thing down here that changes. That is all I am."),
+                    RematchLoop = SP("There is nothing past this. Only me, again, and worse.",
+                                     "Then we will do this again. And again."),
+                    Defeat = NP("Black Frieza goes still without a sound. Far below, on a heap of fallen stone, something that had been asleep opens one eye.",
+                                "...Something heard that. Something all the way at the bottom.")
                 },
                 ["Destroyer"] = new BossLines
                 {
-                    Meet = B("A lean figure yawns on a throne of fallen stone at the bottom of the world. Every fallen thing above was only the road to him.",
-                             "Mm. You woke me. Do you know how few things are permitted to do that? Let's see if you're a snack, or an insult."),
-                    Rematch2 = S("Back? I did not destroy you last time out of curiosity. Do not expect it twice."),
-                    Rematch3 = S("Three visits. I am beginning to think of you as a pet. Pets are permitted to live. Barely."),
-                    RematchLoop = S("Ah, my recurring little insult. Sit. Fight. Amuse me. You have earned that much tedium."),
-                    Defeat = B("For the first time in an age the god chooses to sit back down rather than end everything.",
-                               "Interesting. Live, then. For now.")
+                    Meet = NSP("The shaft ends. At the bottom, on a heap of fallen stone, a lean figure is asleep, and has been for a very long time.",
+                               "Mm. You woke me. Do you know what I am? I am the one who was supposed to come down here and erase this - the hole, the leak, all of it - before it started letting the dead back in. I decided watching was more interesting.",
+                               "You let this happen. Every one of them up there is your fault."),
+                    Rematch2 = SP("Back? I spared you last time out of curiosity. Do not rely on it twice.",
+                                  "You could close this hole. You simply do not want to."),
+                    Rematch3 = SP("Three visits. I am beginning to think of you as a pet.",
+                                  "Close it. You could close it today and you are bored instead."),
+                    RematchLoop = SP("Ah. My recurring little insult. Sit. Fight. Amuse me.",
+                                     "One day you will be interested enough to do your job."),
+                    Defeat = NSP("For the first time in an age the god chooses to sit back down rather than end everything.",
+                                 "Interesting. Live, then. For now.",
+                                 "You still will not close it, will you. So it stays mine to hold.")
                 },
 
-                // =========================================================== Dragon Ball guardians (wordless)
+                // ====================================================== the seven spheres
                 ["BallGuardian1"] = new BossLines
                 {
-                    Meet = N("A hulking keeper coils around a single glowing sphere. It does not speak; it only tightens its grip."),
-                    Rematch2 = N("The One-Star Ball has drifted back to the dark, and its keeper with it. It remembers your reach."),
-                    Rematch3 = N("It has grown extra coils in your absence, all of them meant for you."),
-                    RematchLoop = N("The guardian no longer guards the sphere so much as waits for you to come and take it. Again."),
-                    Defeat = N("The guardian shatters and the One-Star Ball rolls free, warm in your hand.")
+                    Meet = NP("A sphere the size of a fist sits in a hollow in the rock, glowing orange, one star suspended inside it. Something enormous has grown around it like scar tissue.",
+                              "One star. So there are others, further down. That is what everything here is circling."),
+                    Rematch2 = NP("The sphere drifted back into its hollow, and the dark grew a new keeper around it.",
+                                  "It comes back. Of course it comes back. Everything here does."),
+                    Rematch3 = NP("The keeper has grown extra coils in your absence, all of them meant for you.",
+                                  "It has been learning from me while I was away."),
+                    RematchLoop = NP("The guardian no longer guards the sphere so much as waits for you to come and take it.",
+                                     "Right. Again, then."),
+                    Defeat = NP("The keeper shatters and the One-Star Ball rolls free, warm in your hand.",
+                                "Seven of these makes a wish. That is what every dead thing down here wants.")
                 },
                 ["BallGuardian2"] = new BossLines
                 {
-                    Meet = N("A great serpent circles the Two-Star Ball, and an older thing rides its mind: a memory of light borrowed from every living being."),
-                    Rematch2 = N("The sphere sits again in the coils. The guardian has not forgotten what you took from it."),
-                    Rematch3 = N("The borrowed light it carries has learned to lash out first."),
-                    RematchLoop = N("The serpent barely stirs. It simply waits, certain you will come to feed it your ki again."),
-                    Defeat = N("The serpent uncoils in death, and the Two-Star Ball - and the memory of the spirit drawn from all life - are yours.")
+                    Meet = NP("A great serpent has wound itself around the Two-Star Ball, and something older rides in its head: a borrowed memory of light gathered out of every living thing.",
+                              "Two. The spheres hold the hole open - that is why they are down here and not up there."),
+                    Rematch2 = NP("The sphere is back in the coils. The guardian has not forgotten what you took.",
+                                  "Neither have I. Sorry."),
+                    Rematch3 = NP("The borrowed light it carries has learned to strike first.",
+                                  "It is using what it took from me. Everything down here does that eventually."),
+                    RematchLoop = NP("The serpent barely stirs. It simply waits for you to feed it your ki again.",
+                                     "Not today."),
+                    Defeat = NP("The serpent uncoils in death, and the Two-Star Ball - and the trick of gathering light out of every living thing - are yours.",
+                                "Two. Five to go.")
                 },
                 ["BallGuardian3"] = new BossLines
                 {
-                    Meet = N("Two tireless keepers flank the Three-Star Ball, taking turns to watch. Neither has slept since it fell here."),
-                    Rematch2 = N("The sphere returned; so did its watchers, angrier for the wait."),
-                    Rematch3 = N("They no longer take turns. Both watch, always, for you."),
-                    RematchLoop = N("Sleepless, endless, and yours to put down again. The Three-Star Ball is patient, and so are they."),
-                    Defeat = N("Both keepers fall at last, and the Three-Star Ball is loosed from the dark.")
+                    Meet = NP("Three stars in the glass, and a keeper that has not slept since the sphere fell here.",
+                              "Three. They are heavier the deeper they sit. I can feel this one pulling."),
+                    Rematch2 = NP("The sphere returned; so did its watcher, angrier for the wait.",
+                                  "Forty days, like clockwork. This place runs on a season."),
+                    Rematch3 = NP("It does not blink any more. It only watches the ladder.",
+                                  "It is waiting for me specifically now. That is new."),
+                    RematchLoop = NP("Sleepless, endless, and yours to put down again.",
+                                     "Sorry. I need what you are sitting on."),
+                    Defeat = NP("The keeper falls and the Three-Star Ball is loosed from the dark.",
+                                "Three.")
                 },
                 ["BallGuardian4"] = new BossLines
                 {
-                    Meet = N("Two serpents braid themselves around the Four-Star Ball - the sphere that once meant grandfather to someone, somewhere."),
-                    Rematch2 = N("The braid has reformed around the sphere, tighter than before."),
-                    Rematch3 = N("The serpents have learned your feints. They strike where you will be, not where you are."),
-                    RematchLoop = N("The four-starred sphere returns to its coils each time. So do you. So do they."),
-                    Defeat = N("The serpents fall away, and the Four-Star Ball, warm as a memory, is yours.")
+                    Meet = NP("Four stars. Somewhere, once, this particular sphere meant grandfather to somebody.",
+                              "Four. Someone loved this one, a long way from here. You can feel it in the glass."),
+                    Rematch2 = NP("The coils have reformed around the sphere, tighter than before.",
+                                  "It does not want to give this one up. I understand that."),
+                    Rematch3 = NP("The keeper strikes where you will be, not where you are.",
+                                  "It has been practising on the memory of me."),
+                    RematchLoop = NP("The four-starred sphere returns to its coils each time. So do you.",
+                                     "So we do."),
+                    Defeat = NP("The keeper falls away and the Four-Star Ball, warm as a memory, is yours.",
+                                "Four. Three left.")
                 },
                 ["BallGuardian5"] = new BossLines
                 {
-                    Meet = N("Three keepers stand shoulder to shoulder across the tunnel, the Five-Star Ball glinting behind them. No way around. Only through."),
-                    Rematch2 = N("Three again, filling the tunnel, and this time they were expecting you."),
-                    Rematch3 = N("They have packed the tunnel tighter. There is no seam to slip. Only through."),
-                    RematchLoop = N("The wall of them reforms across the shaft each time you take the sphere. Break it. Again."),
-                    Defeat = N("The wall of keepers comes down, and the Five-Star Ball rolls into the light.")
+                    Meet = NP("Five stars behind a keeper that fills the tunnel wall to wall. There is no way around it.",
+                              "Five. And the deeper ones are guarded harder. Whatever wants these kept knows I am close."),
+                    Rematch2 = NP("It fills the shaft again, and this time it was expecting you.",
+                                  "It knew the day I would come. They all do now."),
+                    Rematch3 = NP("There is no seam to slip through. Only forward.",
+                                  "Only forward. Fine."),
+                    RematchLoop = NP("The wall reforms across the shaft each time you take the sphere.",
+                                     "Then I will take it again."),
+                    Defeat = NP("The wall comes down and the Five-Star Ball rolls into the light.",
+                                "Five.")
                 },
                 ["BallGuardian6"] = new BossLines
                 {
-                    Meet = N("Three mummified keepers circle the Six-Star Ball in a slow, endless procession, and the dust never settles."),
-                    Rematch2 = N("The dance resumed the moment you left. It has been waiting to close around you again."),
-                    Rematch3 = N("The procession has quickened. The dust no longer settles even between your visits."),
-                    RematchLoop = N("Round and round, endless as your returns. Step in, take the sphere, leave. Repeat."),
-                    Defeat = N("The procession halts. The Six-Star Ball lies still at its centre, waiting for your hand.")
+                    Meet = NP("Six stars at the centre of a slow, endless circling, and the dust never quite settles.",
+                              "Six. One more after this, and then I have to decide what a wish is worth."),
+                    Rematch2 = NP("The procession resumed the moment you left.",
+                                  "It never actually stopped, did it."),
+                    Rematch3 = NP("The circling has quickened. The dust does not settle even between your visits.",
+                                  "It is getting worse the closer I get to the bottom."),
+                    RematchLoop = NP("Round and round, as endless as your returns.",
+                                     "Round we go."),
+                    Defeat = NP("The procession halts. The Six-Star Ball lies still at its centre.",
+                                "Six. One left.")
                 },
                 ["BallGuardian7"] = new BossLines
                 {
-                    Meet = N("A mixed host guards the last sphere, as if the dark itself grew nervous about letting this one go. With it, the wish is whole."),
-                    Rematch2 = N("The seventh is the hardest to keep and the hardest to take. Its guardians remember your face."),
-                    Rematch3 = N("The host has grown. The dark does not want to lose this one twice."),
-                    RematchLoop = N("The final sphere always returns to the deepest, angriest guard. Claim it again - and the wish with it."),
-                    Defeat = N("The host falls in a tangle of shadow and scale. The Seven-Star Ball is yours - and with it, the wish.")
+                    Meet = NP("The last sphere, seven stars, and the dark has put everything it has left around it. With this one the set is whole - and a whole set is a wish.",
+                              "Seven. Everything down here has been waiting a very long time for somebody to manage this."),
+                    Rematch2 = NP("The seventh is the hardest to keep and the hardest to take. Its guard remembers your face.",
+                                  "It should. We have done this before."),
+                    Rematch3 = NP("The guard has grown. The dark does not want to lose this one twice.",
+                                  "It knows what happens when I get all seven. So do I, now."),
+                    RematchLoop = NP("The final sphere always returns to the deepest, angriest guard.",
+                                     "And I always come back for it."),
+                    Defeat = NP("The guard falls in a tangle of shadow and scale. The Seven-Star Ball is yours - and with it, the wish.",
+                                "Seven. Every wish opens this place wider. I know that now, and I am going to make one anyway.")
                 }
             };
     }

@@ -586,12 +586,16 @@ namespace SaiyanTransformations
         /// so a warp-in or a kill does not try to open a dialogue mid-transition. Steps are
         /// shown one at a time - the next only opens once the player dismisses the current -
         /// so a beat's narrator line and the boss's reply read in order.</summary>
+        /// <summary>Who is speaking a queued line: the narrator (plain box), the boss (its
+        /// portrait), or the player answering back (their own portrait).</summary>
+        private enum Voice { Narrator, Boss, Player }
+
         private sealed class DialogueStep
         {
             public string Id;
             public string Name;
             public string Text;
-            public bool Portrait;   // true = boss portrait box, false = plain narrator box
+            public Voice Who;
         }
 
         private readonly Queue<DialogueStep> pendingDialogue = new Queue<DialogueStep>();
@@ -1107,11 +1111,37 @@ namespace SaiyanTransformations
             if (beat == null)
                 return;
             if (!string.IsNullOrEmpty(beat.Narration))
-                this.pendingDialogue.Enqueue(new DialogueStep { Text = beat.Narration, Portrait = false });
+                this.pendingDialogue.Enqueue(new DialogueStep
+                {
+                    Text = beat.Narration, Who = Voice.Narrator
+                });
             if (!string.IsNullOrEmpty(beat.Speech))
                 this.pendingDialogue.Enqueue(new DialogueStep
                 {
-                    Id = def.Id, Name = def.DisplayName, Text = beat.Speech, Portrait = true
+                    Id = def.Id, Name = def.DisplayName, Text = beat.Speech, Who = Voice.Boss
+                });
+            if (!string.IsNullOrEmpty(beat.Player))
+                this.pendingDialogue.Enqueue(new DialogueStep
+                {
+                    Text = beat.Player, Who = Voice.Player
+                });
+        }
+
+        /// <summary>Queue a speech from a speaker that is not a mine boss (the Invader), with
+        /// the player's reply after it, so it runs through the same one-box-at-a-time queue and
+        /// gets the same portrait treatment. Pages inside <paramref name="speech"/> may be split
+        /// with the "#$b#" dialogue token.</summary>
+        public void QueueSpeech(string id, string name, string speech, string playerReply)
+        {
+            if (!string.IsNullOrEmpty(speech))
+                this.pendingDialogue.Enqueue(new DialogueStep
+                {
+                    Id = id, Name = name, Text = speech, Who = Voice.Boss
+                });
+            if (!string.IsNullOrEmpty(playerReply))
+                this.pendingDialogue.Enqueue(new DialogueStep
+                {
+                    Text = playerReply, Who = Voice.Player
                 });
         }
 
@@ -1126,10 +1156,18 @@ namespace SaiyanTransformations
                 return;
 
             DialogueStep step = this.pendingDialogue.Dequeue();
-            if (step.Portrait)
-                Owner.ShowBossSpeech(step.Id, step.Name, step.Text);
-            else
-                Owner.ShowNarration(step.Text);
+            switch (step.Who)
+            {
+                case Voice.Boss:
+                    Owner.ShowBossSpeech(step.Id, step.Name, step.Text);
+                    break;
+                case Voice.Player:
+                    Owner.ShowPlayerSpeech(step.Text);
+                    break;
+                default:
+                    Owner.ShowNarration(step.Text);
+                    break;
+            }
         }
 
         // ---------------------------------------------------------------- update
@@ -1531,7 +1569,7 @@ namespace SaiyanTransformations
             Owner.PlayCue("unlock", "yoba");
             this.pendingDialogue.Enqueue(new DialogueStep
             {
-                Portrait = false,
+                Who = Voice.Narrator,
                 Text = $"Technique learned: {Owner.TechniqueName(techniqueId)}!  "
                        + $"Press {Owner.KeyLabel(Owner.Config.KamehamehaKey)} to use it, "
                        + $"{Owner.KeyLabel(Owner.Config.SwitchTechniqueKey)} to cycle between techniques."

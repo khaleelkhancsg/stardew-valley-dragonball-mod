@@ -130,7 +130,7 @@ namespace SaiyanTransformations
             if (Owner.Config.ScreenFlash)
                 Game1.flashAlpha = 0.9f;
 
-            this.Say(this.IntroLines(fromMine, defeats));
+            this.Say(this.IntroLines(fromMine, defeats), ReplyFor(defeats));
         }
 
         // -------------------------------------------------------------- update
@@ -183,22 +183,67 @@ namespace SaiyanTransformations
 
             ModEntry.Notify($"Multiversal Invader defeated! {reward:N0}g, 2 Senzu Beans, "
                             + "and your power grows.");
-            this.Say(this.DefeatLines());
+            this.Say(this.DefeatLines(), ReplyDefeat);
         }
 
         // -------------------------------------------------------------- dialogue
 
         /// <summary>Speak through the portrait dialogue system so his own face appears, or fall
         /// back to a HUD line if the world cannot open a dialogue right now.</summary>
-        private void Say(string[] lines)
+        private void Say(string[] lines, string[] replyPool = null)
         {
             if (lines == null || lines.Length == 0)
                 return;
-            if (Context.IsPlayerFree && !Game1.eventUp)
+
+            // route through the boss dialogue queue so his pages and the player's answer open
+            // one box at a time, each with the right portrait
+            if (Owner.Config.EnableBosses && Owner.Bosses != null)
+            {
+                string reply = replyPool != null && replyPool.Length > 0
+                    ? replyPool[Game1.random.Next(replyPool.Length)]
+                    : null;
+                Owner.Bosses.QueueSpeech("Invader", "Multiversal Invader",
+                                         string.Join("#$b#", lines), reply);
+            }
+            else if (Context.IsPlayerFree && !Game1.eventUp)
                 Owner.ShowSpeechLines("Invader", "Multiversal Invader", lines);
             else
                 ModEntry.Notify(lines[0]);
         }
+
+        // ---- what the farmer says back to him --------------------------------
+        private static readonly string[] ReplyFirst =
+        {
+            "You are not one of the dead ones. You walked in here alive.",
+            "So the wishes did this. I tore the hole wider and you came through it.",
+            "Everything else down here is stuck on one floor. You are not stuck at all.",
+            "You are the part I did not think about when I made the wish.",
+        };
+
+        private static readonly string[] ReplyReturn =
+        {
+            "Back again. I am starting to plan my seasons around you.",
+            "You keep coming back and I keep still being here. Get on with it.",
+            "Every wish I make brings you back sooner. I am aware of the arithmetic.",
+            "You are the bill for the wishes. I know. I keep paying it.",
+            "I do not have a speech. I just have a pickaxe and a bad season.",
+        };
+
+        private static readonly string[] ReplyDefeat =
+        {
+            "Go back through the hole. I will close it eventually.",
+            "That is one more season you do not get. Go home - if you still have one.",
+            "You came in through a door I opened. I am sorry about that. Not sorry enough to stop.",
+            "Rest. You will be back the moment I wish again, and we both know I will.",
+        };
+
+        private static readonly string[] ReplyDeep =
+        {
+            "I have stopped counting these too. That should probably worry me more than it does.",
+            "You are the only one down here who actually knows my name. That is a grim thought.",
+            "If I ever stop coming, it will be because I finally lost. Not because I gave up.",
+            "One of us will be right about how this ends. I would rather it was me.",
+        };
 
         private static string[] Pick(string[][] pool) => pool[Game1.random.Next(pool.Length)];
 
@@ -215,11 +260,19 @@ namespace SaiyanTransformations
 
         private string[] DefeatLines() => Pick(DefeatPool);
 
+        /// <summary>The farmer's answer scales with how long this rivalry has been running.</summary>
+        private static string[] ReplyFor(int defeats)
+        {
+            if (defeats <= 0)
+                return ReplyFirst;
+            return defeats >= 5 ? ReplyDeep : ReplyReturn;
+        }
+
         // ---- first meeting, deep in the mine ----------------------------------
         private static readonly string[][] FirstMine =
         {
-            new[] { "The rock down here is thin. I felt you bending fate through it from a realm away.",
-                    "I have crossed a thousand dead worlds to find a fight worth having.",
+            new[] { "Every wish you make on those spheres tears this world a little wider. I felt the draught from a universe away.",
+                    "Mine ended. I walked out of it through a hole exactly like the one you keep opening.",
                     "So. Show me why yours is still standing." },
             new[] { "Do you feel the seam in the air? I came through it, following the scent of a reality that refuses to end.",
                     "Every world I have walked has gone silent. Yours is still loud. That is why I am here." },
