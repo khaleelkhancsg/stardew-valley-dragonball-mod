@@ -114,6 +114,7 @@ namespace SaiyanTransformations
                 return false;
 
             this.Data.Current -= amount;
+            Owner.Progress?.TrainFromKiSpent(amount);   // deliberate spending trains the form
             if (this.Data.Current <= 0f)
             {
                 this.Data.Current = 0f;

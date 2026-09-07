@@ -1538,6 +1538,8 @@ namespace SaiyanTransformations
             this.Data.DefeatDay[def.Id] = this.Today;       // starts the respawn cooldown
             this.Data.DefeatCount[def.Id] = priorDefeats + 1;
 
+            Owner.Progress?.TrainFromBossDefeat();
+
             Owner.PlayCue("boss_defeat", "explosion");
             if (Owner.Config.ScreenFlash)
                 Game1.flashAlpha = 0.9f;

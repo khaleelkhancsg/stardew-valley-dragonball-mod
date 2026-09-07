@@ -122,11 +122,47 @@ namespace SaiyanTransformations
 
         // ---- mastery and Zenkai ------------------------------------------
 
-        /// <summary>Minutes spent holding a form to fully master it.</summary>
+        /// <summary>How much training a form needs to be fully mastered. Still measured in
+        /// minutes of the old hold-the-form rate - 30 sets a budget of 1800 training seconds -
+        /// which is what the gains below pay into.</summary>
         public float MasteryFullMinutes { get; set; } = 30f;
 
         /// <summary>Ki drain reduction at full mastery. 0.4 = 40% cheaper to hold.</summary>
         public float MasteryMaxDrainReduction { get; set; } = 0.4f;
+
+        /// <summary>Master a form by using it rather than by wearing it. With this on, mastery
+        /// comes from strain - fighting, being hit, spending ki, descending - and holding a form
+        /// while doing nothing earns only the trickle below. Turn it off to go back to mastery
+        /// being pure time spent transformed.</summary>
+        public bool MasteryFromTraining { get; set; } = true;
+
+        /// <summary>Share of the old time-based rate that still accrues while transformed but
+        /// idle, so mastery can never stall completely. 0.15 = standing around is 15% as fast as
+        /// it used to be.</summary>
+        public float MasteryIdleFraction { get; set; } = 0.15f;
+
+        /// <summary>Training earned for dealing a monster's full health in damage. Partial damage
+        /// pays out proportionally, so this is scale-free: a weak monster early and a tough one
+        /// late are worth the same, and getting stronger does not make mastery cheaper.</summary>
+        public float MasteryPerMonsterCleared { get; set; } = 10f;
+
+        /// <summary>Multiplier on that damage training when the target is one of this mod's
+        /// bosses. Boss fights are the hardest training available, so they pay the most.</summary>
+        public float MasteryBossFactor { get; set; } = 12f;
+
+        /// <summary>One-off training for putting a boss down.</summary>
+        public float MasteryPerBossDefeat { get; set; } = 120f;
+
+        /// <summary>Training for taking your whole health bar in damage, paid out per hit as a
+        /// fraction of it. Surviving a hard fight teaches more than winning an easy one.</summary>
+        public float MasteryPerHealthBarLost { get; set; } = 30f;
+
+        /// <summary>Training for spending a full ki bar on techniques, dashes and blocks. The
+        /// passive cost of simply holding a form is excluded, or idling would pay twice.</summary>
+        public float MasteryPerKiBarSpent { get; set; } = 40f;
+
+        /// <summary>Training for reaching a mine floor deeper than the one you came from.</summary>
+        public float MasteryPerFloorDescended { get; set; } = 15f;
 
         /// <summary>Mastering a form grants a permanent bonus that applies in EVERY form and
         /// stacks with every other mastered form - the incentive to master as many forms as

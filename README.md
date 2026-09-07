@@ -31,7 +31,7 @@ Super Saiyan → Super Saiyan 2 → Super Saiyan 3 → Super Saiyan God → Supe
 
 - Unlocks are paced ~40–50 floors apart so each form is held long enough to **master** it before the next arrives.
 - Each form applies attack / speed / defence / crit multipliers via `BuffEffects`, swaps in hand-drawn hair, and lights a coloured aura with additive-blended glow and optional electric crackle.
-- **Mastery**: time spent in a form accrues mastery; a fully mastered form runs *calm* — its aura, hum and crackle fall silent unless you actively charge ki, and it costs less ki to hold.
+- **Mastery through training**: a form is mastered by *using* it, not by wearing it — mastery accrues from strain: damage dealt and taken, ki spent on techniques and dashes, bosses put down, floors descended. Damage counts as a share of the target’s health bar, so it stays scale-free: clearing a slime at floor 10 is worth what clearing one at floor 200 is, and getting stronger never makes mastery cheaper. Standing around transformed earns a trickle so it can never stall. A fully mastered form runs *calm* — its aura, hum and crackle fall silent unless you actively charge ki, and it costs less ki to hold.
 - **Mastery carryover**: mastering a form grants a permanent bonus (attack, defence, max ki) that applies in **every** form and **stacks** across all mastered forms — an incentive to master the whole roster, not just the strongest.
 - **Per-form passives & defence**: each form has its own passive (a scaling out-of-nowhere health regen) and a damage-reduction that grows with mastery, both surfaced in the buff tooltip.
 - **Ultra Instinct** grants a dodge chance; **Mastered UI** is the capstone tier.
@@ -120,7 +120,7 @@ TechniquesExtra.cs Solar Flare, Spirit Bomb, Instant Transmission, Kaioken
 DragonBalls.cs     items, summoning ritual, wish menu and effects
 Invader.cs         the recurring Multiversal Invader
 Rivals.cs          overworld rival invasions
-Progress.cs        mastery + carryover, Zenkai, afterimage, ki-melee, form regen
+Progress.cs        mastery + training + carryover, Zenkai, afterimage, ki-melee, form regen
 Transformation.cs  form definitions (stats, passives, hair, aura)
 FxRenderer.cs      aura / lightning / shockwave rendering
 ModConfig.cs       every tunable, documented

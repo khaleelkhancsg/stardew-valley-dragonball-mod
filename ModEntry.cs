@@ -190,6 +190,18 @@ namespace SaiyanTransformations
             gmcm.AddNumberOption(m, () => this.Config.MasteryKiBonusPerForm, v => this.Config.MasteryKiBonusPerForm = v, () => "Max ki per mastered form", null, 0f, 60f, 5f);
             gmcm.AddNumberOption(m, () => this.Config.MasteryChargeBonusPerForm, v => this.Config.MasteryChargeBonusPerForm = v, () => "Charge rate per mastered form", null, 0f, 1f, 0.05f);
 
+            gmcm.AddSectionTitle(m, () => "Training");
+            gmcm.AddParagraph(m, () => "Mastery is earned by using a form, not by wearing it. Fighting, taking hits, spending ki and going deeper all train the form you are currently in.");
+            gmcm.AddBoolOption(m, () => this.Config.MasteryFromTraining, v => this.Config.MasteryFromTraining = v, () => "Master forms by training", () => "Off: mastery is pure time spent transformed, as it used to be.");
+            gmcm.AddNumberOption(m, () => this.Config.MasteryFullMinutes, v => this.Config.MasteryFullMinutes = v, () => "Training needed to master (minutes)", null, 1f, 240f, 5f);
+            gmcm.AddNumberOption(m, () => this.Config.MasteryIdleFraction, v => this.Config.MasteryIdleFraction = v, () => "Idle trickle (share of old rate)", null, 0f, 1f, 0.05f);
+            gmcm.AddNumberOption(m, () => this.Config.MasteryPerMonsterCleared, v => this.Config.MasteryPerMonsterCleared = v, () => "Training per monster cleared", null, 0f, 60f, 1f);
+            gmcm.AddNumberOption(m, () => this.Config.MasteryBossFactor, v => this.Config.MasteryBossFactor = v, () => "Boss damage training x", null, 1f, 20f, 0.5f);
+            gmcm.AddNumberOption(m, () => this.Config.MasteryPerBossDefeat, v => this.Config.MasteryPerBossDefeat = v, () => "Training per boss defeated", null, 0f, 300f, 10f);
+            gmcm.AddNumberOption(m, () => this.Config.MasteryPerHealthBarLost, v => this.Config.MasteryPerHealthBarLost = v, () => "Training per health bar lost", null, 0f, 200f, 5f);
+            gmcm.AddNumberOption(m, () => this.Config.MasteryPerKiBarSpent, v => this.Config.MasteryPerKiBarSpent = v, () => "Training per ki bar spent", null, 0f, 200f, 5f);
+            gmcm.AddNumberOption(m, () => this.Config.MasteryPerFloorDescended, v => this.Config.MasteryPerFloorDescended = v, () => "Training per floor descended", null, 0f, 100f, 5f);
+
             gmcm.AddSectionTitle(m, () => "Bosses");
             gmcm.AddBoolOption(m, () => this.Config.EnableBosses, v => this.Config.EnableBosses = v, () => "Enable bosses");
             gmcm.AddBoolOption(m, () => this.Config.GateBossFloors, v => this.Config.GateBossFloors = v, () => "Seal floors until boss falls");
@@ -1498,6 +1510,11 @@ namespace SaiyanTransformations
                     return;
                 }
             }
+
+            // going deeper is training in itself; coming back up is not
+            if (e.NewLocation is MineShaft arrived && e.OldLocation is MineShaft left
+                && arrived.mineLevel > left.mineLevel)
+                this.Progress.TrainFromDescent(arrived.mineLevel - left.mineLevel);
 
             this.Bosses.OnWarped(e.NewLocation);
             this.Invader.OnWarped(e.NewLocation);

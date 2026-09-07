@@ -47,6 +47,13 @@ namespace SaiyanTransformations
 
         private readonly HashSet<string> announcedMastery = new HashSet<string>();
 
+        // training: monster health watched between ticks, so damage the player deals can be
+        // measured without patching the game's combat path
+        private readonly Dictionary<Monster, int> watchedHealth = new Dictionary<Monster, int>();
+        private readonly List<Monster> watchedGone = new List<Monster>();
+        private GameLocation watchedLocation;
+        private int lastPlayerHealth = -1;
+
         private struct Ghost
         {
             public Vector2 World;
@@ -84,6 +91,9 @@ namespace SaiyanTransformations
             this.meleeFlashTicks = 0;
             this.healthRegenAcc = 0f;
             this.announcedMastery.Clear();
+            this.watchedHealth.Clear();
+            this.watchedLocation = null;
+            this.lastPlayerHealth = -1;
         }
 
         // ------------------------------------------------------------- mastery
@@ -196,6 +206,110 @@ namespace SaiyanTransformations
                     }
                 }
             }
+        }
+
+        // ------------------------------------------------------------- training
+
+        /// <summary>Award training to the form currently held. Strain teaches the form you are
+        /// wearing while you feel it, so nothing accrues out of transformation - the same rule
+        /// the old time-based mastery followed.</summary>
+        public void Train(float seconds)
+        {
+            if (seconds > 0f && Owner.Config.MasteryFromTraining)
+                this.AccumulateMastery(Owner.CurrentForm, seconds);
+        }
+
+        /// <summary>Ki spent on an action: a technique, a dash, a block, a ki-charged swing.
+        /// Measured against the current pool, so a deep-mine ki bar and an early one are worth
+        /// the same. The passive cost of holding a form does not come through here, or standing
+        /// still would train you twice over.</summary>
+        public void TrainFromKiSpent(float amount)
+        {
+            float max = Owner.Ki?.Max ?? 0f;
+            if (amount > 0f && max > 0f)
+                this.Train(amount / max * Math.Max(0f, Owner.Config.MasteryPerKiBarSpent));
+        }
+
+        public void TrainFromBossDefeat()
+        {
+            this.Train(Math.Max(0f, Owner.Config.MasteryPerBossDefeat));
+        }
+
+        /// <summary>Reaching a mine floor deeper than the one just left.</summary>
+        public void TrainFromDescent(int floors)
+        {
+            if (floors > 0)
+                this.Train(floors * Math.Max(0f, Owner.Config.MasteryPerFloorDescended));
+        }
+
+        /// <summary>Damage the player dealt since the last tick, read off monster health because
+        /// the game raises no event for it. Each hit counts as the fraction of that monster's
+        /// maximum health it removed, so training does not inflate as your damage numbers grow:
+        /// clearing a slime at floor 10 is worth what clearing one at floor 200 is.</summary>
+        private void TrainFromDamageDealt()
+        {
+            GameLocation location = Game1.currentLocation;
+            if (location != this.watchedLocation)
+            {
+                // monsters left behind on another floor were walked away from, not killed
+                this.watchedHealth.Clear();
+                this.watchedLocation = location;
+            }
+            if (location == null)
+                return;
+
+            float perClear = Math.Max(0f, Owner.Config.MasteryPerMonsterCleared);
+            float bossFactor = Math.Max(1f, Owner.Config.MasteryBossFactor);
+            float earned = 0f;
+
+            this.watchedGone.Clear();
+            this.watchedGone.AddRange(this.watchedHealth.Keys);
+
+            foreach (NPC npc in location.characters)
+            {
+                if (!(npc is Monster monster) || monster.MaxHealth <= 0)
+                    continue;
+
+                this.watchedGone.Remove(monster);
+                if (this.watchedHealth.TryGetValue(monster, out int before) && monster.Health < before)
+                    earned += Share(monster, before - monster.Health);
+                this.watchedHealth[monster] = monster.Health;
+            }
+
+            // the game removes a monster on the blow that kills it, often before its health is
+            // ever seen at zero, so the health it still had is credited when it disappears
+            foreach (Monster monster in this.watchedGone)
+            {
+                if (this.watchedHealth.TryGetValue(monster, out int last) && last > 0)
+                    earned += Share(monster, last);
+                this.watchedHealth.Remove(monster);
+            }
+
+            this.Train(earned);
+
+            float Share(Monster m, int damage)
+            {
+                float fraction = Math.Min(1f, damage / (float)m.MaxHealth);
+                return fraction * perClear
+                       * (m.modData.ContainsKey(BossManager.BossKey) ? bossFactor : 1f);
+            }
+        }
+
+        /// <summary>Damage taken since the last tick, as a share of the health bar. Surviving a
+        /// fight that hurt teaches more than winning one that did not.</summary>
+        private void TrainFromDamageTaken()
+        {
+            Farmer player = Game1.player;
+            if (player == null || player.maxHealth <= 0)
+                return;
+
+            int now = player.health;
+            if (this.lastPlayerHealth > now && this.lastPlayerHealth >= 0)
+            {
+                float share = (this.lastPlayerHealth - now) / (float)player.maxHealth;
+                this.Train(share * Math.Max(0f, Owner.Config.MasteryPerHealthBarLost));
+            }
+            this.lastPlayerHealth = now;
         }
 
         /// <summary>Per-form passive: bleed health back while the form is held. Fractional
@@ -405,9 +519,30 @@ namespace SaiyanTransformations
                 return;
 
             Transformation form = Owner.CurrentForm;
+            bool training = Owner.Config.MasteryFromTraining;
 
+            // holding a form still counts for something, but only a trickle: the bulk of mastery
+            // is earned by the strain below, so the form cannot be mastered by standing in it
             if (form != null && Context.IsPlayerFree)
-                this.AccumulateMastery(form, 1f / 60f);
+            {
+                float rate = training
+                    ? MathHelper.Clamp(Owner.Config.MasteryIdleFraction, 0f, 1f)
+                    : 1f;
+                this.AccumulateMastery(form, rate / 60f);
+            }
+
+            if (training && form != null && Context.IsPlayerFree)
+            {
+                this.TrainFromDamageDealt();
+                this.TrainFromDamageTaken();
+            }
+            else
+            {
+                // keep the baselines current, so transforming mid-fight cannot pay out a backlog
+                this.watchedHealth.Clear();
+                this.watchedLocation = null;
+                this.lastPlayerHealth = Game1.player?.health ?? -1;
+            }
 
             this.UpdateFormRegen(form);
             this.UpdateZenkai();
