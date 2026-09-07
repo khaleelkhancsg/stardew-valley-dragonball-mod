@@ -35,6 +35,8 @@ TOP = 1                     # top margin inside the cell
 SIDE_DX = -3                # the original side piece sits 3px back from centre, onto the skull
 SIDE_NEW_DX = 0             # the redraw seats on the skull centred
 SPLIT_ROW = 7               # cell row where the drawings meet: above is crown, below is mane
+SHARPEN = 70                # unsharp strength that suits the original art's reduction
+SIDE_NEW_SHARPEN = 130      # the redraw reduces harder, so it needs more (see place)
 
 
 def extract(path):
@@ -61,14 +63,25 @@ def extract(path):
     return [keyed.crop((x0, y0, x1 + 1, y1 + 1)) for x0, y0, x1, y1 in boxes[:4]]
 
 
-def place(piece, fit, flip=False, dx=0):
-    """Fit inside the box, sharpen back the detail the downscale costs, seat it in the cell."""
+def place(piece, fit, flip=False, dx=0, sharpen=SHARPEN, predetail=False):
+    """Fit inside the box, sharpen back the detail the downscale costs, seat it in the cell.
+
+    predetail sharpens once at 4x the target size before the final reduction. The redraw is
+    about a 25x reduction against the original art's 20x, and in that extra averaging whole
+    strands disappear rather than merely soften, which no amount of sharpening afterwards
+    brings back. Lifting the strand edges while they still span several pixels does.
+    """
     max_w, max_h = fit
     scale = min(max_w / piece.width, max_h / piece.height)
     w = max(1, round(piece.width * scale))
     h = max(1, round(piece.height * scale))
-    img = piece.resize((w, h), Image.LANCZOS)
-    img = img.filter(ImageFilter.UnsharpMask(radius=1.0, percent=70, threshold=2))
+    if predetail:
+        img = piece.resize((w * 4, h * 4), Image.LANCZOS)
+        img = img.filter(ImageFilter.UnsharpMask(radius=2.0, percent=90, threshold=2))
+        img = img.resize((w, h), Image.LANCZOS)
+    else:
+        img = piece.resize((w, h), Image.LANCZOS)
+    img = img.filter(ImageFilter.UnsharpMask(radius=1.0, percent=sharpen, threshold=2))
     if flip:
         img = img.transpose(Image.FLIP_LEFT_RIGHT)
     cell = Image.new("RGBA", (CW, CH), (0, 0, 0, 0))
@@ -124,8 +137,8 @@ def main():
     new_side = extract(SRC_SIDE)[3]
 
     lower = place(old_side, FIT_SIDE, flip=True, dx=SIDE_DX)  # flipped so the profile faces right
-    upper = place(recolour(new_side, palette_of(old_side)),
-                  FIT_SIDE_NEW, flip=True, dx=SIDE_NEW_DX)
+    upper = place(recolour(new_side, palette_of(old_side)), FIT_SIDE_NEW, flip=True,
+                  dx=SIDE_NEW_DX, sharpen=SIDE_NEW_SHARPEN, predetail=True)
 
     cell = Image.new("RGBA", (CW, CH), (0, 0, 0, 0))
     cell.paste(upper.crop((0, 0, CW, SPLIT_ROW)), (0, 0))
