@@ -83,6 +83,11 @@ namespace SaiyanTransformations
         private int blockFlashTicks;
         private int parryWindowTicks;
 
+        /// <summary>The player's dialogue portrait: the top half of their own farmer sprite,
+        /// rebuilt whenever their look changes (transforming swaps the hair).</summary>
+        private Texture2D playerPortrait;
+        private int playerPortraitKey = int.MinValue;
+
         internal Transformation CurrentForm =>
             this.formIndex >= 0 && this.formIndex < Transformation.All.Length
                 ? Transformation.All[this.formIndex]
@@ -111,6 +116,7 @@ namespace SaiyanTransformations
             helper.Events.Content.AssetRequested += this.OnAssetRequested;
             helper.Events.Input.ButtonsChanged += this.OnButtonsChanged;
             helper.Events.Player.Warped += this.OnWarped;
+            helper.Events.Display.Rendering += this.OnRendering;
             helper.Events.Display.RenderedWorld += this.OnRenderedWorld;
             helper.Events.Display.RenderedHud += this.OnRenderedHud;
             helper.Events.GameLoop.SaveLoaded += this.OnSaveLoaded;
@@ -1292,6 +1298,60 @@ namespace SaiyanTransformations
             this.announcedUnlocks++;   // advance one; any further unlocks show on later ticks
         }
 
+        /// <summary>Built here, before the game draws anything, because this is the only point
+        /// in the frame where swapping the render target cannot disturb what is already on
+        /// screen. Only rebuilds when the farmer's appearance key actually changes.</summary>
+        private void OnRendering(object sender, RenderingEventArgs e)
+        {
+            if (!Context.IsWorldReady)
+                return;
+
+            Farmer p = Game1.player;
+            if (p?.FarmerRenderer == null)
+                return;
+
+            int key = (p.hair.Value * 397)
+                      ^ (this.formIndex + 2) * 31
+                      ^ (int)p.hairstyleColor.Value.PackedValue
+                      ^ (p.shirt.Value?.GetHashCode() ?? 0);
+            if (this.playerPortrait != null && key == this.playerPortraitKey)
+                return;
+
+            try
+            {
+                GraphicsDevice gd = Game1.graphics.GraphicsDevice;
+                RenderTarget2D target = new RenderTarget2D(
+                    gd, 64, 64, false, gd.PresentationParameters.BackBufferFormat, DepthFormat.None);
+
+                RenderTargetBinding[] previous = gd.GetRenderTargets();
+                gd.SetRenderTarget(target);
+                gd.Clear(Color.Transparent);
+
+                using (SpriteBatch batch = new SpriteBatch(gd))
+                {
+                    batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
+                    // frame 0 faces the camera. The farmer draws at 4x, so a 16x32 sprite is
+                    // 64x128 - and a 64x64 target therefore captures exactly its top half:
+                    // the head and shoulders, hair and all.
+                    p.FarmerRenderer.draw(batch, p, 0, Vector2.Zero);
+                    batch.End();
+                }
+
+                gd.SetRenderTargets(previous);
+
+                // only release the old one when nothing can still be drawing it
+                if (Game1.activeClickableMenu == null)
+                    this.playerPortrait?.Dispose();
+                this.playerPortrait = target;
+                this.playerPortraitKey = key;
+            }
+            catch (Exception ex)
+            {
+                this.playerPortraitKey = key;   // do not retry every frame
+                this.Monitor.Log($"Could not build the player portrait: {ex.Message}", LogLevel.Trace);
+            }
+        }
+
         private void OnRenderedWorld(object sender, RenderedWorldEventArgs e)
         {
             if (!Context.IsWorldReady || Game1.player == null || Game1.currentLocation == null)
@@ -1709,7 +1769,9 @@ namespace SaiyanTransformations
                 name = "You";
             try
             {
-                Texture2D portrait = this.GetBossPortrait("_player");
+                // the player's own farmer, cropped to the head; only falls back to an asset if
+                // the sprite could not be rendered
+                Texture2D portrait = this.playerPortrait ?? this.GetBossPortrait("_player");
                 NPC speaker = new NPC(null, new Vector2(-2000f, -2000f), "", 0,
                                       name, false, portrait);
                 speaker.displayName = name;
